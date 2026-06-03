@@ -1,0 +1,928 @@
+{
+  "info": {
+    "name": "Quiz App API",
+    "description": "Complete API collection for the Quiz Web Application. \n\nBase URL: http://localhost:5000/api\n\nAuthentication: Most endpoints require a Bearer token obtained from Login.\n\nThe collection includes environment variables: {{baseUrl}}, {{authToken}}, {{refreshToken}}",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "authToken", "value": "" },
+    { "key": "refreshToken", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "courseId", "value": "" },
+    { "key": "batchId", "value": "" },
+    { "key": "quizId", "value": "" },
+    { "key": "questionId", "value": "" },
+    { "key": "attemptId", "value": "" },
+    { "key": "resultId", "value": "" },
+    { "key": "certId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints - Login, Register, Refresh Token, Logout, Get Current User",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "pm.environment.set('authToken', jsonData.accessToken);",
+                  "pm.environment.set('refreshToken', jsonData.refreshToken);",
+                  "pm.environment.set('userId', jsonData.user.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@quizapp.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login with email and password. Returns access token, refresh token, and user data.\n\nTest Credentials:\n- Admin: admin@quizapp.com / password123\n- Instructor: instructor@quizapp.com / password123\n- Student: student1@quizapp.com / password123"
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"New Student\",\n  \"email\": \"newstudent@quizapp.com\",\n  \"phone\": \"9999999999\",\n  \"password\": \"password123\",\n  \"role_id\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user. role_id optional (defaults to Student = 3). Roles: 1=Admin, 2=Instructor, 3=Student, 4=Moderator"
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh-token",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh-token"]
+            },
+            "description": "Get a new access token using refresh token"
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout and invalidate tokens"
+          }
+        },
+        {
+          "name": "Get Current User (Me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get currently authenticated user's profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "User management endpoints",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "role", "value": null, "disabled": true },
+                { "key": "status", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated list of users. Optional filters: role, status"
+          }
+        },
+        {
+          "name": "Get User By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Get a single user by ID"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"Updated Name\",\n  \"phone\": \"8888888888\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Update user fields (full_name, phone, profile_image, status)"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Delete user (Admin only - role_id=1)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Courses",
+      "description": "Course management endpoints",
+      "item": [
+        {
+          "name": "Get All Courses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated list of courses"
+          }
+        },
+        {
+          "name": "Get Course By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            },
+            "description": "Get a single course with subjects"
+          }
+        },
+        {
+          "name": "Create Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_name\": \"New Course\",\n  \"description\": \"Course description here\",\n  \"duration_days\": 90\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses"]
+            },
+            "description": "Create a new course (Admin/Instructor only)"
+          }
+        },
+        {
+          "name": "Update Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_name\": \"Updated Course Name\",\n  \"description\": \"Updated description\",\n  \"duration_days\": 120,\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            },
+            "description": "Update course fields"
+          }
+        },
+        {
+          "name": "Delete Course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/courses/{{courseId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["courses", "{{courseId}}"]
+            },
+            "description": "Delete a course (Admin only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Batches",
+      "description": "Batch and enrollment endpoints",
+      "item": [
+        {
+          "name": "Get All Batches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "course_id", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated list of batches with instructor and enrollment count"
+          }
+        },
+        {
+          "name": "Get Batch By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches", "{{batchId}}"]
+            },
+            "description": "Get single batch with enrolled students list"
+          }
+        },
+        {
+          "name": "Create Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"course_id\": 1,\n  \"instructor_id\": 2,\n  \"batch_name\": \"Batch 2026-A\",\n  \"start_date\": \"2026-06-01\",\n  \"end_date\": \"2026-09-01\",\n  \"max_students\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/batches",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches"]
+            },
+            "description": "Create a new batch (Admin/Instructor only)"
+          }
+        },
+        {
+          "name": "Update Batch",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"batch_name\": \"Updated Batch Name\",\n  \"max_students\": 40\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches", "{{batchId}}"]
+            },
+            "description": "Update batch fields"
+          }
+        },
+        {
+          "name": "Delete Batch",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/batches/{{batchId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches", "{{batchId}}"]
+            },
+            "description": "Delete a batch (Admin only)"
+          }
+        },
+        {
+          "name": "Enroll Student in Batch",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": 3\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/batches/{{batchId}}/enroll",
+              "host": ["{{baseUrl}}"],
+              "path": ["batches", "{{batchId}}", "enroll"]
+            },
+            "description": "Enroll a student in the batch"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quizzes",
+      "description": "Quiz management endpoints",
+      "item": [
+        {
+          "name": "Get All Quizzes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quizzes?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "course_id", "value": null, "disabled": true },
+                { "key": "batch_id", "value": null, "disabled": true },
+                { "key": "status", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated list of quizzes with question counts"
+          }
+        },
+        {
+          "name": "Get Quiz By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", "{{quizId}}"]
+            },
+            "description": "Get single quiz with all its questions"
+          }
+        },
+        {
+          "name": "Create Quiz",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Midterm Exam\",\n  \"description\": \"Comprehensive midterm assessment\",\n  \"course_id\": 1,\n  \"batch_id\": 1,\n  \"duration_minutes\": 60,\n  \"total_marks\": 100,\n  \"passing_marks\": 40,\n  \"negative_marking\": false,\n  \"status\": \"draft\",\n  \"start_time\": \"2026-07-01 09:00:00\",\n  \"end_time\": \"2026-07-01 10:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quizzes",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes"]
+            },
+            "description": "Create a new quiz (Admin/Instructor only). Status options: draft, published, active, closed, archived"
+          }
+        },
+        {
+          "name": "Update Quiz",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Updated Quiz Title\",\n  \"status\": \"published\",\n  \"duration_minutes\": 45\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", "{{quizId}}"]
+            },
+            "description": "Update quiz fields"
+          }
+        },
+        {
+          "name": "Delete Quiz",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/quizzes/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["quizzes", "{{quizId}}"]
+            },
+            "description": "Delete a quiz and all associated questions/attempts (cascading)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Questions",
+      "description": "Question bank endpoints - CRUD, bulk import, and tags",
+      "item": [
+        {
+          "name": "Get Questions by Quiz",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/questions/quiz/{{quizId}}?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "quiz", "{{quizId}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "50" },
+                { "key": "difficulty", "value": null, "disabled": true },
+                { "key": "question_type", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get all questions for a quiz with their options"
+          }
+        },
+        {
+          "name": "Get Question By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
+            },
+            "description": "Get single question with options and tags"
+          }
+        },
+        {
+          "name": "Create Question (Single)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1,\n  \"question_type\": \"mcq\",\n  \"question_text\": \"What is the capital of France?\",\n  \"marks\": 5,\n  \"difficulty\": \"easy\",\n  \"explanation\": \"Paris is the capital of France\",\n  \"options\": [\n    {\"option_text\": \"Paris\", \"is_correct\": true},\n    {\"option_text\": \"London\", \"is_correct\": false},\n    {\"option_text\": \"Berlin\", \"is_correct\": false},\n    {\"option_text\": \"Madrid\", \"is_correct\": false}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "description": "Create a single question with options.\n\nQuestion types: mcq, multiple_correct, true_false, fill_blanks\nDifficulty: easy, medium, hard"
+          }
+        },
+        {
+          "name": "Create True/False Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1,\n  \"question_type\": \"true_false\",\n  \"question_text\": \"The Earth is flat.\",\n  \"marks\": 3,\n  \"difficulty\": \"easy\",\n  \"options\": [\n    {\"option_text\": \"True\", \"is_correct\": false},\n    {\"option_text\": \"False\", \"is_correct\": true}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "description": "Create a true/false question"
+          }
+        },
+        {
+          "name": "Create Multiple Correct Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1,\n  \"question_type\": \"multiple_correct\",\n  \"question_text\": \"Which of the following are even numbers?\",\n  \"marks\": 10,\n  \"difficulty\": \"medium\",\n  \"options\": [\n    {\"option_text\": \"2\", \"is_correct\": true},\n    {\"option_text\": \"3\", \"is_correct\": false},\n    {\"option_text\": \"4\", \"is_correct\": true},\n    {\"option_text\": \"7\", \"is_correct\": false},\n    {\"option_text\": \"8\", \"is_correct\": true}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "description": "Create a question with multiple correct answers"
+          }
+        },
+        {
+          "name": "Create Fill-in-Blanks Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1,\n  \"question_type\": \"fill_blanks\",\n  \"question_text\": \"The chemical symbol for water is ___.\",\n  \"marks\": 3,\n  \"difficulty\": \"easy\",\n  \"options\": [\n    {\"option_text\": \"H2O\", \"is_correct\": true}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions"]
+            },
+            "description": "Create a fill-in-the-blanks question"
+          }
+        },
+        {
+          "name": "Update Question",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question_text\": \"Updated question text?\",\n  \"marks\": 10,\n  \"difficulty\": \"hard\",\n  \"options\": [\n    {\"option_text\": \"New Option A\", \"is_correct\": true},\n    {\"option_text\": \"New Option B\", \"is_correct\": false}\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
+            },
+            "description": "Update question text, marks, difficulty, and replace options"
+          }
+        },
+        {
+          "name": "Delete Question",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "{{questionId}}"]
+            },
+            "description": "Delete a question and its options"
+          }
+        },
+        {
+          "name": "Bulk Import Questions",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1,\n  \"questions\": [\n    {\n      \"question_type\": \"mcq\",\n      \"question_text\": \"What is 2+2?\",\n      \"marks\": 5,\n      \"difficulty\": \"easy\",\n      \"options\": [\n        {\"option_text\": \"3\", \"is_correct\": false},\n        {\"option_text\": \"4\", \"is_correct\": true},\n        {\"option_text\": \"5\", \"is_correct\": false}\n      ]\n    },\n    {\n      \"question_type\": \"mcq\",\n      \"question_text\": \"What is 10/2?\",\n      \"marks\": 5,\n      \"difficulty\": \"easy\",\n      \"options\": [\n        {\"option_text\": \"3\", \"is_correct\": false},\n        {\"option_text\": \"4\", \"is_correct\": false},\n        {\"option_text\": \"5\", \"is_correct\": true}\n      ]\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/questions/bulk",
+              "host": ["{{baseUrl}}"],
+              "path": ["questions", "bulk"]
+            },
+            "description": "Bulk import multiple questions at once with their options (Admin/Instructor only)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Attempts",
+      "description": "Quiz attempt endpoints - Start, Submit, View attempts",
+      "item": [
+        {
+          "name": "Start Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quiz_id\": 1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attempts/start",
+              "host": ["{{baseUrl}}"],
+              "path": ["attempts", "start"]
+            },
+            "description": "Start a new quiz attempt (Student only).\n- Validates quiz is published/active and within time window\n- Resumes existing in-progress attempt if found\n- Returns attempt details"
+          }
+        },
+        {
+          "name": "Submit Attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answers\": [\n    {\n      \"question_id\": 1,\n      \"selected_option_id\": 1\n    },\n    {\n      \"question_id\": 2,\n      \"selected_option_id\": 6\n    },\n    {\n      \"question_id\": 3,\n      \"selected_option_id\": [1, 3, 5]\n    },\n    {\n      \"question_id\": 4,\n      \"selected_option_id\": 10\n    },\n    {\n      \"question_id\": 5,\n      \"answer_text\": \"2a\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attempts/{{attemptId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["attempts", "{{attemptId}}", "submit"]
+            },
+            "description": "Submit quiz answers for auto-grading.\n\n- For MCQ/TrueFalse: send selected_option_id (single)\n- For Multiple Correct: send selected_option_id as array\n- For Fill Blanks: send answer_text\n- Negative marking applied if quiz has negative_marking = true"
+          }
+        },
+        {
+          "name": "Get Attempt Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attempts/{{attemptId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["attempts", "{{attemptId}}"]
+            },
+            "description": "Get attempt details with answers (student's own attempts only)"
+          }
+        },
+        {
+          "name": "Get My Attempts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attempts",
+              "host": ["{{baseUrl}}"],
+              "path": ["attempts"]
+            },
+            "description": "Get all attempts for the authenticated student"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Results",
+      "description": "Result management endpoints",
+      "item": [
+        {
+          "name": "Get All Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["results"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "student_id", "value": null, "disabled": true },
+                { "key": "quiz_id", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated results with student and quiz info"
+          }
+        },
+        {
+          "name": "Get Result By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/{{resultId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["results", "{{resultId}}"]
+            },
+            "description": "Get detailed result with answer breakdown, correct/selected answers, and explanations"
+          }
+        },
+        {
+          "name": "Get Quiz Results",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/results/quiz/{{quizId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["results", "quiz", "{{quizId}}"]
+            },
+            "description": "Get all results for a specific quiz, ranked by position"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Leaderboard",
+      "description": "Leaderboard endpoints",
+      "item": [
+        {
+          "name": "Get Leaderboard by Quiz",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leaderboards/quiz/{{quizId}}?limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["leaderboards", "quiz", "{{quizId}}"],
+              "query": [
+                { "key": "limit", "value": "20" }
+              ]
+            },
+            "description": "Get ranked leaderboard for a quiz with student names and scores"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Certificates",
+      "description": "Certificate management endpoints",
+      "item": [
+        {
+          "name": "Get All Certificates",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/certificates?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "student_id", "value": null, "disabled": true },
+                { "key": "quiz_id", "value": null, "disabled": true }
+              ]
+            },
+            "description": "Get paginated list of all certificates"
+          }
+        },
+        {
+          "name": "Get My Certificates",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/certificates/mine",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "mine"]
+            },
+            "description": "Get certificates for the authenticated student"
+          }
+        },
+        {
+          "name": "Get Certificate By ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/certificates/{{certId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["certificates", "{{certId}}"]
+            },
+            "description": "Get certificate details with student info, quiz info, and score"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "item": [
+        {
+          "name": "API Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Simple health check endpoint to verify API is running"
+          }
+        }
+      ]
+    }
+  ]
+}

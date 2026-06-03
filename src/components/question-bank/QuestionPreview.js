@@ -1,0 +1,10 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { Card, Badge, Button } from '@components/common';
+import { formatDateShort, truncateText } from '@utils/index';
+export const QuestionPreview = ({ question, onEdit, onDelete, onSelect, selectable = false, selected = false, }) => {
+    return (_jsx(Card, { className: "hover:shadow-md transition-shadow", children: _jsxs("div", { className: "flex gap-4", children: [selectable && (_jsx("input", { type: "checkbox", checked: selected, onChange: () => onSelect?.(question), className: "w-5 h-5 rounded mt-1" })), _jsx("div", { className: "flex-1", children: _jsx("div", { className: "flex items-start justify-between gap-4", children: _jsxs("div", { children: [_jsx("h4", { className: "font-semibold text-gray-900 mb-2", children: truncateText(question.text, 100) }), _jsxs("div", { className: "flex flex-wrap gap-2", children: [_jsx(Badge, { variant: "primary", size: "sm", children: question.type.replace('-', ' ') }), _jsx(Badge, { variant: question.difficulty === 'easy'
+                                                ? 'success'
+                                                : question.difficulty === 'medium'
+                                                    ? 'warning'
+                                                    : 'danger', size: "sm", children: question.difficulty }), _jsxs(Badge, { variant: "default", size: "sm", children: [question.marks, " marks"] })] }), _jsxs("div", { className: "mt-3 text-xs text-gray-500 space-y-1", children: [_jsxs("div", { children: ["Category: ", question.category] }), question.tags.length > 0 && (_jsxs("div", { children: ["Tags: ", question.tags.slice(0, 3).join(', '), question.tags.length > 3 ? '...' : ''] })), _jsxs("div", { children: ["Created: ", formatDateShort(question.createdAt)] })] })] }) }) }), _jsxs("div", { className: "flex gap-2 flex-col", children: [onEdit && (_jsx(Button, { variant: "secondary", size: "sm", onClick: () => onEdit(question), children: "Edit" })), onDelete && (_jsx(Button, { variant: "danger", size: "sm", onClick: () => onDelete(question.id), children: "Delete" }))] })] }) }));
+};
