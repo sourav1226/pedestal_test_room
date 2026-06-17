@@ -1,19 +1,34 @@
 import { useState } from 'react';
-import { Form, Button, Card, Row, Col } from 'react-bootstrap';
+import { Form, Button, Card, Row, Col, Alert } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validated, setValidated] = useState(false);
+  const { login, loading, error } = useAuthStore();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const form = e.currentTarget;
     if (form.checkValidity() === false) {
       e.stopPropagation();
+      setValidated(true);
+      return;
     }
     setValidated(true);
-    console.log('Login attempt:', { email, password });
+    try {
+      const data = await login(email, password);
+      if (data.user.role_id === 1) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch {
+      // error is set in store
+    }
   };
 
   return (
@@ -26,6 +41,7 @@ function Login() {
                 <h2 className="fw-bold text-primary">Assessment System</h2>
                 <p className="text-muted">Sign in to continue</p>
               </div>
+              {error && <Alert variant="danger">{error}</Alert>}
               <Form noValidate validated={validated} onSubmit={handleSubmit}>
                 <Form.Group className="mb-3" controlId="formEmail">
                   <Form.Label>Email Address</Form.Label>
@@ -35,6 +51,7 @@ function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
+                    disabled={loading}
                   />
                   <Form.Control.Feedback type="invalid">
                     Please provide a valid email.
@@ -49,25 +66,22 @@ function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    disabled={loading}
                   />
                   <Form.Control.Feedback type="invalid">
                     Please provide a password.
                   </Form.Control.Feedback>
                 </Form.Group>
 
-                <Form.Group className="mb-3 d-flex justify-content-between">
-                  <Form.Check type="checkbox" label="Remember me" />
-                  <a href="#" className="text-decoration-none">Forgot password?</a>
-                </Form.Group>
-
-                <Button variant="primary" type="submit" className="w-100 py-2">
-                  Sign In
+                <Button
+                  variant="primary"
+                  type="submit"
+                  className="w-100 py-2"
+                  disabled={loading}
+                >
+                  {loading ? 'Signing in...' : 'Sign In'}
                 </Button>
               </Form>
-
-              <div className="text-center mt-4">
-                <p className="mb-0">Don't have an account? <a href="#">Sign up</a></p>
-              </div>
             </Card.Body>
           </Card>
         </Col>

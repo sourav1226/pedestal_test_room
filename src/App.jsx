@@ -7,6 +7,7 @@ import ResultPage from './pages/ResultPage'
 import LeaderboardPage from './pages/LeaderboardPage'
 import CertificatePage from './pages/CertificatePage'
 import AdminLayout from './components/AdminLayout'
+import ProtectedRoute from './components/ProtectedRoute'
 import {
   DashboardPage,
   QuizManagementPage,
@@ -99,53 +100,64 @@ function App() {
         <Route path="/student/leaderboard" element={<LeaderboardPage />} />
         <Route path="/certificate" element={<CertificatePage />} />
 
-        {/* Admin Routes wrapped in AdminLayout */}
         <Route
           path="/admin"
           element={
-            <AdminLayout>
-              <DashboardPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <DashboardPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/quizzes"
           element={
-            <AdminLayout>
-              <QuizManagementPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <QuizManagementPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/quizzes/create"
           element={
-            <AdminLayout>
-              <QuizEditorPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <QuizEditorPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/quizzes/:quizId/edit"
           element={
-            <AdminLayout>
-              <QuizEditorPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <QuizEditorPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/questions"
           element={
-            <AdminLayout>
-              <QuestionManagementPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <QuestionManagementPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
         <Route
           path="/admin/question-bank"
           element={
-            <AdminLayout>
-              <QuestionBankPage />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <QuestionBankPage />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 

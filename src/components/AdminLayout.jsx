@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
 
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: '📊' },
@@ -11,6 +12,13 @@ const navItems = [
 function AdminLayout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuthStore()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -45,7 +53,15 @@ function AdminLayout({ children }) {
             ☰
           </button>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-gray-600">👤 Admin User</span>
+            <span className="text-sm text-gray-600">
+              👤 {user?.full_name || 'Admin User'}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-red-600 hover:text-red-800 font-medium"
+            >
+              Logout
+            </button>
           </div>
         </div>
         <div className="flex-1 overflow-auto p-6">{children}</div>
