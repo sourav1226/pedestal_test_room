@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../components/student-common';
 import {
   CertificateTemplate,
@@ -6,10 +7,8 @@ import {
   CertificateInfo,
 } from '../components/certificate';
 import certificateService from '../services/certificateService';
+import { useAuthStore } from '../store/authStore';
 
-/**
- * CertificatePage - Main page for displaying and downloading certificate
- */
 const CertificatePage = () => {
   const [certificateData, setCertificateData] = useState(null);
   const [templates, setTemplates] = useState([]);
@@ -17,16 +16,22 @@ const CertificatePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('certificate');
+  const { user, accessToken } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!accessToken || !user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchCertificateData = async () => {
       try {
         setLoading(true);
-        const quizId = 'quiz_001';
-        const studentId = 'student_123';
+        const quizId = new URLSearchParams(window.location.search).get('quizId');
 
         const [certData, certTemplates] = await Promise.all([
-          certificateService.getCertificateData(quizId, studentId),
+          certificateService.getCertificateData(quizId, user.id),
           certificateService.getAvailableTemplates(),
         ]);
 
@@ -42,7 +47,7 @@ const CertificatePage = () => {
     };
 
     fetchCertificateData();
-  }, []);
+  }, [user, accessToken, navigate]);
 
   const handleTemplateChange = (templateId) => {
     setSelectedTemplate(templateId);
@@ -73,7 +78,6 @@ const CertificatePage = () => {
     );
   }
 
-  // Check eligibility
   const isEligible = certificateService.isCertificateEligible(certificateData.scorePercentage);
 
   if (!isEligible) {
@@ -90,7 +94,7 @@ const CertificatePage = () => {
                 <Button
                   label="View Results"
                   variant="primary"
-                  onClick={() => window.location.href = '/student/result'}
+                  onClick={() => navigate('/student/result')}
                 />
               </div>
             </div>
@@ -103,13 +107,11 @@ const CertificatePage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Your Certificate of Achievement</h1>
           <p className="text-gray-600">Congratulations! You have earned your certificate.</p>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex gap-2 mb-8 justify-center flex-wrap">
           {['certificate', 'preview', 'details'].map((tab) => (
             <button
@@ -128,14 +130,10 @@ const CertificatePage = () => {
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="space-y-8">
-          {/* Certificate Tab */}
           {activeTab === 'certificate' && (
             <CertificateTemplate certificateData={certificateData} templateId={selectedTemplate} />
           )}
-
-          {/* Preview Tab */}
           {activeTab === 'preview' && (
             <CertificatePreview
               certificateData={certificateData}
@@ -143,30 +141,26 @@ const CertificatePage = () => {
               onTemplateChange={handleTemplateChange}
             />
           )}
-
-          {/* Details Tab */}
           {activeTab === 'details' && (
             <CertificateInfo certificateData={certificateData} />
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="mt-12 flex flex-wrap gap-4 justify-center">
           <Button
             label="View My Results"
             variant="primary"
             size="lg"
-            onClick={() => window.location.href = '/student/result'}
+            onClick={() => navigate('/student/result')}
           />
           <Button
             label="View Leaderboard"
             variant="primary"
             size="lg"
-            onClick={() => window.location.href = '/student/leaderboard'}
+            onClick={() => navigate('/student/leaderboard')}
           />
         </div>
 
-        {/* Share Section */}
         <div className="mt-12 text-center">
           <Card variant="primary">
             <div className="space-y-4">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../components/student-common';
 import {
   LeaderboardTable,
@@ -6,24 +7,35 @@ import {
   LeaderboardStats,
 } from '../components/leaderboard';
 import leaderboardService from '../services/leaderboardService';
+import { useAuthStore } from '../store/authStore';
 
-/**
- * LeaderboardPage - Main page for displaying leaderboard
- */
 const LeaderboardPage = () => {
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [topPerformers, setTopPerformers] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { user, accessToken } = useAuthStore();
+  const navigate = useNavigate();
 
-  const currentUserId = 'student_123'; // In real app, get from auth context
+  const currentUserId = user ? String(user.id) : '';
 
   useEffect(() => {
+    if (!accessToken || !user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchLeaderboardData = async () => {
       try {
         setLoading(true);
-        const quizId = 'quiz_001'; // In real app, get from route params
+        const quizId = new URLSearchParams(window.location.search).get('quizId');
+
+        if (!quizId) {
+          setError('No quiz selected');
+          setLoading(false);
+          return;
+        }
 
         const [leaderboard, performers, statsData] = await Promise.all([
           leaderboardService.getLeaderboard(quizId),
@@ -44,22 +56,21 @@ const LeaderboardPage = () => {
     };
 
     fetchLeaderboardData();
-  }, []);
+  }, [user, accessToken, navigate]);
 
   const handleSearch = async (searchTerm) => {
+    const quizId = new URLSearchParams(window.location.search).get('quizId');
     if (searchTerm.trim() === '') {
-      const quizId = 'quiz_001';
       const data = await leaderboardService.getLeaderboard(quizId);
       setLeaderboardData(data);
     } else {
-      const quizId = 'quiz_001';
       const data = await leaderboardService.searchLeaderboard(quizId, searchTerm);
       setLeaderboardData(data);
     }
   };
 
   const handleSort = async (field) => {
-    const quizId = 'quiz_001';
+    const quizId = new URLSearchParams(window.location.search).get('quizId');
     const data = await leaderboardService.getLeaderboard(quizId, {
       sortBy: field,
       order: 'desc',
@@ -95,27 +106,23 @@ const LeaderboardPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-2">Leaderboard</h1>
           <p className="text-gray-600">See how you rank compared to other participants</p>
         </div>
 
-        {/* Top Performers Section */}
         {topPerformers.length > 0 && (
           <div className="mb-8">
             <TopPerformers performers={topPerformers} />
           </div>
         )}
 
-        {/* Statistics Section */}
         {stats && (
           <div className="mb-8">
             <LeaderboardStats stats={stats} />
           </div>
         )}
 
-        {/* Full Leaderboard Table */}
         <div className="mb-8">
           <LeaderboardTable
             data={leaderboardData}
@@ -125,19 +132,18 @@ const LeaderboardPage = () => {
           />
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-wrap gap-4 justify-center">
           <Button
             label="View My Results"
             variant="primary"
             size="lg"
-            onClick={() => window.location.href = '/student/result'}
+            onClick={() => navigate('/student/result')}
           />
           <Button
             label="Download Certificate"
             variant="success"
             size="lg"
-            onClick={() => window.location.href = '/certificate'}
+            onClick={() => navigate('/certificate')}
           />
         </div>
       </div>

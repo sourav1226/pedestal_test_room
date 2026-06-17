@@ -17,7 +17,16 @@ export const getQuizzes = async (req, res) => {
 
     if (course_id) { query += ' AND q.course_id = ?'; params.push(course_id); }
     if (batch_id) { query += ' AND q.batch_id = ?'; params.push(batch_id); }
-    if (status) { query += ' AND q.status = ?'; params.push(status); }
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        query += ' AND q.status = ?';
+        params.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        query += ` AND q.status IN (${statuses.map(() => '?').join(',')})`;
+        params.push(...statuses);
+      }
+    }
 
     query += ' ORDER BY q.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);

@@ -1,11 +1,34 @@
-import { Container, Navbar, Card, Button, Form, Row, Col } from 'react-bootstrap';
+import { useState } from 'react'
+import { Container, Navbar, Card, Button, Form, Row, Col, Alert } from 'react-bootstrap'
+import { useAuthStore } from '../store/authStore'
+import attemptService from '../services/attemptService'
 
-function TestInstruction({ onStartTest }) {
+function TestInstruction({ quiz, onStartTest, onBack }) {
+  const [agreed, setAgreed] = useState(false)
+  const [termsAgreed, setTermsAgreed] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const { user } = useAuthStore()
+
+  const handleStart = async () => {
+    if (!agreed || !termsAgreed) return
+    setLoading(true)
+    setError(null)
+    try {
+      const data = await attemptService.startAttempt(quiz.id)
+      onStartTest({ ...data.attempt, resumed: data.resumed })
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to start quiz')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="test-instruction-page">
       <Navbar className="header-nav">
         <Container fluid>
-          <Navbar.Brand className="d-flex align-items-center">
+          <Navbar.Brand className="d-flex align-items-center" onClick={onBack} style={{ cursor: 'pointer' }}>
             <div className="logo-box">
               <i className="bi bi-gem"></i>
             </div>
@@ -14,10 +37,10 @@ function TestInstruction({ onStartTest }) {
           <div className="d-flex align-items-center gap-3">
             <div className="time-indicator">
               <i className="bi bi-clock me-2"></i>
-              01:15:00
+              {Math.floor(quiz.duration / 60)}:{String(quiz.duration % 60).padStart(2, '0')}:00
             </div>
             <div className="profile-avatar">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=User" alt="Profile" />
+              <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.full_name || 'User'}`} alt="Profile" />
             </div>
           </div>
         </Container>
@@ -28,21 +51,30 @@ function TestInstruction({ onStartTest }) {
           <Col lg={8}>
             <Card className="instruction-card">
               <Card.Body className="p-4">
+                {error && <Alert variant="danger">{error}</Alert>}
                 <Row>
                   <Col lg={8}>
                     <div className="test-title">
-                      <h2>AI Prompt Engineer Test</h2>
-                      <p className="text-muted mb-4">Technical Assessment</p>
+                      <h2>{quiz.title}</h2>
+                      <p className="text-muted mb-4">{quiz.category} | {quiz.description}</p>
                     </div>
 
                     <div className="test-info mb-4">
                       <div className="info-item">
                         <i className="bi bi-question-circle"></i>
-                        <span>Total Questions: <strong>30</strong></span>
+                        <span>Total Questions: <strong>{quiz.questions}</strong></span>
                       </div>
                       <div className="info-item">
                         <i className="bi bi-award"></i>
-                        <span>Total Marks: <strong>300</strong></span>
+                        <span>Total Marks: <strong>{quiz.totalMarks}</strong></span>
+                      </div>
+                      <div className="info-item">
+                        <i className="bi bi-clock"></i>
+                        <span>Duration: <strong>{quiz.duration} minutes</strong></span>
+                      </div>
+                      <div className="info-item">
+                        <i className="bi bi-check-circle"></i>
+                        <span>Passing Marks: <strong>{quiz.passingScore}</strong></span>
                       </div>
                     </div>
 
@@ -51,12 +83,16 @@ function TestInstruction({ onStartTest }) {
                         type="checkbox"
                         id="instructionCheck"
                         label="I have read and understood the instructions and agree to the terms and conditions of this assessment."
+                        checked={agreed}
+                        onChange={(e) => setAgreed(e.target.checked)}
                         className="mb-3"
                       />
                       <Form.Check
                         type="checkbox"
                         id="termsCheck"
                         label="I confirm that I will not use any external resources or assistance during this test."
+                        checked={termsAgreed}
+                        onChange={(e) => setTermsAgreed(e.target.checked)}
                         className="mb-3"
                       />
                     </div>
@@ -68,6 +104,7 @@ function TestInstruction({ onStartTest }) {
                         <li>You can mark questions for review and come back later.</li>
                         <li>Do not refresh the page or close the browser during the test.</li>
                         <li>Ensure stable internet connection throughout the assessment.</li>
+                        <li>The test will auto-submit when the timer runs out.</li>
                       </ul>
                     </div>
                   </Col>
@@ -81,21 +118,21 @@ function TestInstruction({ onStartTest }) {
                             <span className="stat-icon"><i className="bi bi-question-circle-fill"></i></span>
                             <div>
                               <small>Questions</small>
-                              <h4>30</h4>
+                              <h4>{quiz.questions}</h4>
                             </div>
                           </div>
                           <div className="stat-item">
                             <span className="stat-icon"><i className="bi bi-star-fill"></i></span>
                             <div>
                               <small>Marks</small>
-                              <h4>300</h4>
+                              <h4>{quiz.totalMarks}</h4>
                             </div>
                           </div>
                           <div className="stat-item">
                             <span className="stat-icon"><i className="bi bi-clock-fill"></i></span>
                             <div>
-                              <small>Remaining</small>
-                              <h4>1:15</h4>
+                              <small>Duration</small>
+                              <h4>{quiz.duration} min</h4>
                             </div>
                           </div>
                         </div>
@@ -111,9 +148,16 @@ function TestInstruction({ onStartTest }) {
                   </Col>
                 </Row>
 
-                <div className="text-center mt-4">
-                  <Button className="start-test-btn" onClick={onStartTest}>
-                    Start Test
+                <div className="text-center mt-4 d-flex gap-3 justify-content-center">
+                  <Button variant="secondary" onClick={onBack}>
+                    <i className="bi bi-arrow-left me-2"></i>Back
+                  </Button>
+                  <Button
+                    className="start-test-btn"
+                    onClick={handleStart}
+                    disabled={!agreed || !termsAgreed || loading}
+                  >
+                    {loading ? 'Starting...' : 'Start Test'}
                     <i className="bi bi-arrow-right ms-2"></i>
                   </Button>
                 </div>
@@ -123,7 +167,7 @@ function TestInstruction({ onStartTest }) {
         </Row>
       </Container>
     </div>
-  );
+  )
 }
 
-export default TestInstruction;
+export default TestInstruction

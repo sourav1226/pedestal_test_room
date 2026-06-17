@@ -1,45 +1,144 @@
-import { useState } from 'react';
-import { Container, Navbar, Card, Button, Form, Row, Col } from 'react-bootstrap';
-import SubmitModal from '../components/SubmitModal';
+import { useState, useEffect, useCallback } from 'react'
+import { Container, Navbar, Card, Button, Form, Row, Col, Alert } from 'react-bootstrap'
+import { apiClient } from '../services/ApiService'
+import attemptService from '../services/attemptService'
+import SubmitModal from '../components/SubmitModal'
 
-const questions = [
-  {
-    id: 1,
-    text: "What is the main purpose of gradient clipping?",
-    options: [
-      "Increase learning rate",
-      "Prevent exploding gradients",
-      "Reduce dataset size",
-      "Improve activation functions"
-    ]
-  },
-  {
-    id: 2,
-    text: "Which optimization technique uses momentum?",
-    options: [
-      "SGD",
-      "Adam",
-      "RMSprop",
-      "All of the above"
-    ]
+function QuestionAttempt({ quiz, attempt, onSubmit }) {
+  const [questions, setQuestions] = useState([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [answers, setAnswers] = useState({})
+  const [markedForReview, setMarkedForReview] = useState({})
+  const [visitedQuestions, setVisitedQuestions] = useState(new Set())
+  const [showModal, setShowModal] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState(null)
+  const [timeLeft, setTimeLeft] = useState(quiz.duration * 60)
+  const [submitted, setSubmitted] = useState(false)
+
+  useEffect(() => {
+    async function fetchQuestions() {
+      try {
+        const { data } = await apiClient.get(`/questions/quiz/${quiz.id}`)
+        setQuestions(data.questions || [])
+      } catch (err) {
+        setError('Failed to load questions')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchQuestions()
+  }, [quiz.id])
+
+  useEffect(() => {
+    if (timeLeft <= 0 && !submitted) {
+      handleSubmitTest()
+      return
+    }
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1)
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [timeLeft, submitted])
+
+  useEffect(() => {
+    if (questions.length > 0 && currentIndex >= 0) {
+      setVisitedQuestions((prev) => new Set([...prev, currentIndex]))
+    }
+  }, [currentIndex, questions.length])
+
+  const currentQuestion = questions[currentIndex]
+
+  const handleAnswerSelect = (optionId) => {
+    if (submitted) return
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: { question_id: currentQuestion.id, selected_option_id: optionId }
+    }))
   }
-];
 
-const questionStatus = Array(30).fill('not-visited');
-questionStatus[0] = 'answered';
-questionStatus[1] = 'answered';
-questionStatus[2] = 'marked';
-questionStatus[3] = 'skipped';
+  const handleFillBlanks = (text) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [currentQuestion.id]: { question_id: currentQuestion.id, answer_text: text }
+    }))
+  }
 
-function QuestionAttempt({ onSubmit }) {
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [markedForReview, setMarkedForReview] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+  const toggleReview = () => {
+    setMarkedForReview((prev) => ({
+      ...prev,
+      [currentIndex]: !prev[currentIndex]
+    }))
+  }
 
-  const handleAnswerSelect = (index) => {
-    setSelectedAnswer(index);
-  };
+  const goToQuestion = (index) => {
+    setCurrentIndex(index)
+  }
+
+  const handleSaveNext = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+    }
+  }
+
+  const handleSubmitTest = useCallback(async () => {
+    if (submitted) return
+    setSubmitting(true)
+    setSubmitted(true)
+    try {
+      const answersArray = Object.values(answers)
+      const result = await attemptService.submitAttempt(attempt.id, answersArray)
+      onSubmit(result)
+    } catch (err) {
+      setError(err.response?.data?.error || 'Failed to submit test')
+      setSubmitted(false)
+    } finally {
+      setSubmitting(false)
+    }
+  }, [answers, attempt, onSubmit, submitted])
+
+  const formatTime = (seconds) => {
+    const h = Math.floor(seconds / 3600)
+    const m = Math.floor((seconds % 3600) / 60)
+    const s = seconds % 60
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  }
+
+  const isAnswered = (qId) => answers[qId] && (answers[qId].selected_option_id || answers[qId].answer_text)
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-700 font-semibold">Loading questions...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error && questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-xl shadow-lg text-center">
+          <p className="text-red-600 font-semibold mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-blue-600 text-white rounded-lg">
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!currentQuestion) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-600">No questions available.</p>
+      </div>
+    )
+  }
 
   return (
     <div className="question-attempt-page">
@@ -52,68 +151,89 @@ function QuestionAttempt({ onSubmit }) {
             <span className="ms-2 fw-bold">Quiz Portal</span>
           </Navbar.Brand>
           <div className="d-flex align-items-center gap-3">
-            <span className="earn-points">
-              <i className="bi bi-trophy me-1"></i> Earn Points
+            <span className={`earn-points ${timeLeft < 300 ? 'text-danger' : ''}`}>
+              <i className="bi bi-clock me-1"></i> {formatTime(timeLeft)}
             </span>
           </div>
         </Container>
       </Navbar>
 
       <Container fluid className="py-3">
+        {error && <Alert variant="danger" className="mx-3">{error}</Alert>}
         <Row>
           <Col lg={9}>
             <Card className="question-card">
               <Card.Body className="p-4">
-                <div className="question-header mb-4">
-                  <span className="question-number">Question-{currentQuestion + 1}</span>
-                  <span className="question-marks">10 Marks</span>
+                <div className="question-header mb-4 d-flex justify-content-between align-items-center">
+                  <span className="question-number fw-bold">Question {currentIndex + 1} of {questions.length}</span>
+                  <span className="question-marks badge bg-primary">{currentQuestion.marks} Marks</span>
                 </div>
 
                 <div className="question-text mb-4">
-                  <h4>{questions[currentQuestion].text}</h4>
+                  <h4>{currentQuestion.question_text}</h4>
                 </div>
 
                 <div className="options-list">
-                  {questions[currentQuestion].options.map((option, index) => (
+                  {(currentQuestion.options || []).map((option) => (
                     <div
-                      key={index}
-                      className={`option-card ${selectedAnswer === index ? 'selected' : ''}`}
-                      onClick={() => handleAnswerSelect(index)}
+                      key={option.id}
+                      className={`option-card ${answers[currentQuestion.id]?.selected_option_id === option.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        if (currentQuestion.question_type === 'fill_blanks') return
+                        handleAnswerSelect(option.id)
+                      }}
+                      style={{ cursor: currentQuestion.question_type === 'fill_blanks' ? 'default' : 'pointer' }}
                     >
                       <div className="option-indicator">
-                        {selectedAnswer === index ? (
-                          <i className="bi bi-check-circle-fill"></i>
+                        {answers[currentQuestion.id]?.selected_option_id === option.id ? (
+                          <i className="bi bi-check-circle-fill text-primary"></i>
                         ) : (
-                          <div className="option-letter">{String.fromCharCode(65 + index)}</div>
+                          <div className="option-letter">{String.fromCharCode(65 + (currentQuestion.options || []).indexOf(option))}</div>
                         )}
                       </div>
-                      <span>{option}</span>
+                      <span>{option.option_text}</span>
                     </div>
                   ))}
                 </div>
 
-                <div className="question-controls mt-4">
+                {currentQuestion.question_type === 'fill_blanks' && (
+                  <div className="mt-3">
+                    <Form.Control
+                      type="text"
+                      placeholder="Type your answer..."
+                      value={answers[currentQuestion.id]?.answer_text || ''}
+                      onChange={(e) => handleFillBlanks(e.target.value)}
+                    />
+                  </div>
+                )}
+
+                <div className="question-controls mt-4 d-flex justify-content-between align-items-center">
                   <Form.Check
                     type="checkbox"
                     id="markReview"
                     label="Mark for Review"
-                    checked={markedForReview}
-                    onChange={(e) => setMarkedForReview(e.target.checked)}
-                    className="d-inline-block me-4"
+                    checked={!!markedForReview[currentIndex]}
+                    onChange={toggleReview}
+                    className="d-inline-block"
                   />
-                  <Button
-                    className="save-next-btn"
-                    onClick={() => {
-                      if (currentQuestion < questions.length - 1) {
-                        setCurrentQuestion(currentQuestion + 1);
-                        setSelectedAnswer(null);
-                        setMarkedForReview(false);
-                      }
-                    }}
-                  >
-                    Save & Next
-                    <i className="bi bi-arrow-right ms-2"></i>
-                  </Button>
+                  <div className="d-flex gap-2">
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => currentIndex > 0 && setCurrentIndex(currentIndex - 1)}
+                      disabled={currentIndex === 0}
+                    >
+                      <i className="bi bi-arrow-left me-1"></i>Previous
+                    </Button>
+                    {currentIndex < questions.length - 1 ? (
+                      <Button className="save-next-btn" onClick={handleSaveNext}>
+                        Save & Next<i className="bi bi-arrow-right ms-2"></i>
+                      </Button>
+                    ) : (
+                      <Button className="save-next-btn" onClick={() => setShowModal(true)}>
+                        Submit Test<i className="bi bi-check-circle ms-2"></i>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </Card.Body>
             </Card>
@@ -122,61 +242,61 @@ function QuestionAttempt({ onSubmit }) {
           <Col lg={3}>
             <Card className="sidebar-card">
               <Card.Body className="p-3">
-                <div className="user-info text-center mb-3">
-                  <img
-                    src="https://api.dicebear.com/7.x/avataaars/svg?seed=User"
-                    alt="Profile"
-                    className="user-avatar mb-2"
-                  />
-                  <h6 className="mb-0">John Doe</h6>
-                  <small className="text-muted">AI Prompt Engineer</small>
-                </div>
-
                 <div className="test-status mb-3">
-                  <div className="status-item">
+                  <div className="status-item d-flex justify-content-between mb-2">
                     <span className="status-label">Time Left</span>
-                    <span className="status-value time-left">01:15:00</span>
+                    <span className={`status-value fw-bold ${timeLeft < 300 ? 'text-danger' : ''}`}>{formatTime(timeLeft)}</span>
                   </div>
-                  <div className="status-item">
-                    <span className="status-label">Marks Scored</span>
-                    <span className="status-value">18</span>
+                  <div className="status-item d-flex justify-content-between">
+                    <span className="status-label">Questions</span>
+                    <span className="status-value">{Object.keys(answers).length}/{questions.length}</span>
                   </div>
                 </div>
 
-                <div className="legend mb-3">
-                  <div className="legend-item">
-                    <span className="legend-color answered"></span>
+                <div className="legend mb-3 d-flex flex-wrap gap-3">
+                  <div className="d-flex align-items-center gap-1">
+                    <span className="legend-color answered d-inline-block" style={{ width: 12, height: 12, borderRadius: 2 }}></span>
                     <small>Answered</small>
                   </div>
-                  <div className="legend-item">
-                    <span className="legend-color marked"></span>
+                  <div className="d-flex align-items-center gap-1">
+                    <span className="legend-color marked d-inline-block" style={{ width: 12, height: 12, borderRadius: 2 }}></span>
                     <small>Marked</small>
                   </div>
-                  <div className="legend-item">
-                    <span className="legend-color skipped"></span>
-                    <small>Skipped</small>
-                  </div>
-                  <div className="legend-item">
-                    <span className="legend-color not-visited"></span>
+                  <div className="d-flex align-items-center gap-1">
+                    <span className="legend-color not-visited d-inline-block" style={{ width: 12, height: 12, borderRadius: 2 }}></span>
                     <small>Not Visited</small>
                   </div>
                 </div>
 
                 <div className="question-navigator">
                   <h6 className="mb-2">Question Navigator</h6>
-                  <div className="question-grid">
-                    {questionStatus.map((status, index) => (
+                  <div className="question-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+                    {questions.map((q, idx) => (
                       <div
-                        key={index}
-                        className={`question-box ${status} ${index === currentQuestion ? 'current' : ''}`}
+                        key={q.id}
+                        onClick={() => goToQuestion(idx)}
+                        className={`question-box text-center p-1 rounded ${
+                          idx === currentIndex ? 'current border border-primary' : ''
+                        } ${
+                          markedForReview[idx] ? 'bg-warning text-dark' :
+                          isAnswered(q.id) ? 'bg-success text-white' :
+                          visitedQuestions.has(idx) ? 'bg-secondary text-white' :
+                          'bg-light'
+                        }`}
+                        style={{ cursor: 'pointer', fontSize: 12 }}
                       >
-                        {index + 1}
+                        {idx + 1}
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <Button className="submit-test-btn w-100 mt-3" onClick={() => setShowModal(true)}>
+                <Button
+                  className="submit-test-btn w-100 mt-3"
+                  variant="danger"
+                  onClick={() => setShowModal(true)}
+                  disabled={submitted}
+                >
                   Submit Test
                 </Button>
               </Card.Body>
@@ -187,14 +307,13 @@ function QuestionAttempt({ onSubmit }) {
 
       <SubmitModal
         show={showModal}
-        onHide={() => setShowModal(false)}
-        onConfirm={() => {
-          setShowModal(false);
-          onSubmit();
-        }}
+        onHide={() => !submitting && setShowModal(false)}
+        onConfirm={handleSubmitTest}
+        stats={{ answered: Object.keys(answers).length, notAnswered: questions.length - Object.keys(answers).length }}
+        submitting={submitting}
       />
     </div>
-  );
+  )
 }
 
-export default QuestionAttempt;
+export default QuestionAttempt

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Card } from '../components/student-common';
 import {
   ResultSummary,
@@ -8,24 +9,28 @@ import {
   PreviousAttempts,
 } from '../components/result';
 import resultService from '../services/resultService';
+import { useAuthStore } from '../store/authStore';
 
-/**
- * ResultPage - Main page for displaying quiz results
- */
 const ResultPage = () => {
   const [resultData, setResultData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('summary');
+  const { user, accessToken } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    if (!accessToken || !user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchResultData = async () => {
       try {
         setLoading(true);
-        // In real app, get these from route params or context
-        const quizId = 'quiz_001';
-        const studentId = 'student_123';
-        
+        const quizId = new URLSearchParams(window.location.search).get('quizId');
+        const studentId = user.id;
+
         const data = await resultService.getResultData(quizId, studentId);
         setResultData(data);
         setError(null);
@@ -38,7 +43,7 @@ const ResultPage = () => {
     };
 
     fetchResultData();
-  }, []);
+  }, [user, accessToken, navigate]);
 
   if (loading) {
     return (
@@ -68,7 +73,6 @@ const ResultPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Navigation Tabs */}
         <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
           {['summary', 'categories', 'difficulty', 'feedback', 'attempts'].map((tab) => (
             <button
@@ -85,55 +89,38 @@ const ResultPage = () => {
           ))}
         </div>
 
-        {/* Tab Content */}
         <div className="space-y-8">
-          {/* Summary Tab */}
           {activeTab === 'summary' && (
             <div className="space-y-6">
               <ResultSummary resultData={resultData} />
             </div>
           )}
-
-          {/* Categories Tab */}
           {activeTab === 'categories' && (
             <CategoryPerformance categoryData={resultData.categoryPerformance} />
           )}
-
-          {/* Difficulty Tab */}
           {activeTab === 'difficulty' && (
             <DifficultyBreakdown difficultyData={resultData.difficultyBreakdown} />
           )}
-
-          {/* Feedback Tab */}
           {activeTab === 'feedback' && (
             <PerformanceFeedback feedback={resultData.feedback} />
           )}
-
-          {/* Attempts Tab */}
           {activeTab === 'attempts' && (
             <PreviousAttempts attempts={resultData.previousAttempts} />
           )}
         </div>
 
-        {/* Action Buttons */}
         <div className="mt-12 flex flex-wrap gap-4 justify-center">
           <Button
             label="Download Certificate"
             variant="success"
             size="lg"
-            onClick={() => window.location.href = '/certificate'}
+            onClick={() => navigate('/certificate')}
           />
           <Button
             label="View Leaderboard"
             variant="primary"
             size="lg"
-            onClick={() => window.location.href = '/student/leaderboard'}
-          />
-          <Button
-            label="View Result Summary"
-            variant="outline"
-            size="lg"
-            onClick={() => window.location.href = '/student/result'}
+            onClick={() => navigate('/student/leaderboard')}
           />
         </div>
       </div>

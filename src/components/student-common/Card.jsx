@@ -19,6 +19,7 @@ const Card = ({
     primary: 'bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200',
     success: 'bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200',
     warning: 'bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200',
+    danger: 'bg-gradient-to-br from-red-50 to-rose-50 border border-red-200',
   };
 
   // Shadow styles

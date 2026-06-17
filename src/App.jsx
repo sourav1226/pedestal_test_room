@@ -8,6 +8,7 @@ import LeaderboardPage from './pages/LeaderboardPage'
 import CertificatePage from './pages/CertificatePage'
 import AdminLayout from './components/AdminLayout'
 import ProtectedRoute from './components/ProtectedRoute'
+import { useAuthStore } from './store/authStore'
 import {
   DashboardPage,
   QuizManagementPage,
@@ -20,12 +21,19 @@ import {
 
 function HomePage() {
   const [selectedOption, setSelectedOption] = useState(null)
+  const { user, accessToken } = useAuthStore()
 
   if (selectedOption === 'student') {
+    if (!accessToken || !user) {
+      return <Navigate to="/login" replace />
+    }
     return <StudentFlow />
   }
 
   if (selectedOption === 'student-enhanced') {
+    if (!accessToken || !user) {
+      return <Navigate to="/login" replace />
+    }
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center max-w-md p-8">
@@ -84,7 +92,7 @@ function HomePage() {
             to="/login"
             className="block w-full px-6 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl font-semibold hover:bg-gray-50 transition-all"
           >
-            🔑 Login
+            🔑 {accessToken ? 'Switch Account' : 'Login'}
           </Link>
         </div>
       </div>
