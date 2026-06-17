@@ -1,194 +1,158 @@
-/**
- * Quiz Service
- *
- * Handles all quiz-related operations:
- * - CRUD operations on quizzes
- * - Fetching quiz data
- * - Publishing/archiving quizzes
- * - Quiz statistics
- *
- * Currently uses mock data. Replace with HTTP calls for production.
- */
-import { ApiService } from './ApiService';
-import { generateId, getMockQuizzesFromStorage, saveMockQuizzesToStorage, initializeMockData } from '@mock/data';
-class QuizService extends ApiService {
-    constructor() {
-        super();
-        initializeMockData();
-        this.quizzes = getMockQuizzesFromStorage();
-    }
-    /**
-     * Get all quizzes with optional pagination and filtering
-     */
-    async getAllQuizzes(params) {
-        const { page = 1, limit = 10, status } = params || {};
-        // Simulate filtering
-        let filtered = [...this.quizzes];
-        if (status) {
-            filtered = filtered.filter((q) => q.status === status);
-        }
-        const total = filtered.length;
-        const start = (page - 1) * limit;
-        const end = start + limit;
-        const data = filtered.slice(start, end);
-        return this.simulateApiCall({
-            data,
-            total,
-            page,
-            limit,
-            totalPages: Math.ceil(total / limit),
-        });
-    }
-    /**
-     * Get a single quiz by ID
-     */
-    async getQuizById(quizId) {
-        const quiz = this.quizzes.find((q) => q.id === quizId);
-        if (!quiz) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        return this.simulateApiCall(quiz);
-    }
-    /**
-     * Create a new quiz
-     */
-    async createQuiz(quizData) {
-        const newQuiz = {
-            id: generateId('quiz'),
-            title: quizData.title || 'Untitled Quiz',
-            description: quizData.description || '',
-            category: quizData.category || 'General Knowledge',
-            difficulty: quizData.difficulty || 'medium',
-            duration: quizData.duration || 30,
-            totalMarks: quizData.totalMarks || 100,
-            passingScore: quizData.passingScore || 50,
-            status: 'draft',
-            questions: [],
-            settings: quizData.settings || {
-                shuffleQuestions: true,
-                shuffleOptions: true,
-                showResultsImmediately: false,
-                negativeMarking: 0.25,
-                allowReview: true,
-                allowSkip: false,
-                singleAttempt: false,
-            },
-            createdBy: 'current-user@example.com',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-        };
-        this.quizzes.push(newQuiz);
-        saveMockQuizzesToStorage(this.quizzes);
-        return this.simulateApiCall(newQuiz);
-    }
-    /**
-     * Update an existing quiz
-     */
-    async updateQuiz(quizId, quizData) {
-        const quizIndex = this.quizzes.findIndex((q) => q.id === quizId);
-        if (quizIndex === -1) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        const updatedQuiz = {
-            ...this.quizzes[quizIndex],
-            ...quizData,
-            id: quizId, // Prevent ID change
-            createdAt: this.quizzes[quizIndex].createdAt, // Prevent creation date change
-            updatedAt: new Date().toISOString(),
-        };
-        this.quizzes[quizIndex] = updatedQuiz;
-        saveMockQuizzesToStorage(this.quizzes);
-        return this.simulateApiCall(updatedQuiz);
-    }
-    /**
-     * Delete a quiz
-     */
-    async deleteQuiz(quizId) {
-        const quizIndex = this.quizzes.findIndex((q) => q.id === quizId);
-        if (quizIndex === -1) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        this.quizzes.splice(quizIndex, 1);
-        saveMockQuizzesToStorage(this.quizzes);
-        return this.simulateApiCall({ success: true });
-    }
-    /**
-     * Publish a quiz
-     */
-    async publishQuiz(quizId) {
-        const quiz = this.quizzes.find((q) => q.id === quizId);
-        if (!quiz) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        if (quiz.questions.length === 0) {
-            return {
-                success: false,
-                error: 'Cannot publish quiz without questions',
-            };
-        }
-        quiz.status = 'published';
-        quiz.publishedAt = new Date().toISOString();
-        quiz.updatedAt = new Date().toISOString();
-        saveMockQuizzesToStorage(this.quizzes);
-        return this.simulateApiCall(quiz);
-    }
-    /**
-     * Archive a quiz
-     */
-    async archiveQuiz(quizId) {
-        const quiz = this.quizzes.find((q) => q.id === quizId);
-        if (!quiz) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        quiz.status = 'archived';
-        quiz.updatedAt = new Date().toISOString();
-        saveMockQuizzesToStorage(this.quizzes);
-        return this.simulateApiCall(quiz);
-    }
-    /**
-     * Add questions to quiz
-     */
-    async addQuestionsToQuiz(quizId, questionIds) {
-        const quiz = this.quizzes.find((q) => q.id === quizId);
-        if (!quiz) {
-            return {
-                success: false,
-                error: `Quiz with ID ${quizId} not found`,
-            };
-        }
-        // In production, fetch actual questions from DB
-        // For now, just update the reference
-        quiz.updatedAt = new Date().toISOString();
-        return this.simulateApiCall(quiz);
-    }
-    /**
-     * Get quiz statistics (for dashboard)
-     */
-    async getQuizStats() {
-        const stats = {
-            totalQuizzes: this.quizzes.length,
-            publishedQuizzes: this.quizzes.filter((q) => q.status === 'published').length,
-            draftQuizzes: this.quizzes.filter((q) => q.status === 'draft').length,
-            archivedQuizzes: this.quizzes.filter((q) => q.status === 'archived').length,
-            totalQuestions: this.quizzes.reduce((acc, q) => acc + q.questions.length, 0),
-        };
-        return this.simulateApiCall(stats);
-    }
+import { apiClient, handleApiError } from './ApiService';
+
+function mapQuizFromApi(quiz) {
+  return {
+    id: String(quiz.id),
+    title: quiz.title,
+    description: quiz.description || '',
+    category: quiz.course_name || 'General',
+    difficulty: 'medium',
+    duration: quiz.duration_minutes,
+    totalMarks: quiz.total_marks,
+    passingScore: quiz.passing_marks || 0,
+    status: quiz.status || 'draft',
+    questions: typeof quiz.question_count === 'number' ? quiz.question_count : (quiz.questions || 0),
+    settings: {
+      shuffleQuestions: true,
+      shuffleOptions: true,
+      showResultsImmediately: false,
+      negativeMarking: quiz.negative_marking ? 0.25 : 0,
+      allowReview: true,
+      allowSkip: false,
+      singleAttempt: false,
+    },
+    createdBy: quiz.created_by_name || 'Unknown',
+    createdAt: quiz.created_at,
+    updatedAt: quiz.updated_at,
+  };
 }
-// Export singleton instance
+
+class QuizService {
+  async getAllQuizzes(params = {}) {
+    try {
+      const { page = 1, limit = 10, status } = params;
+      const queryParams = { page, limit };
+      if (status) queryParams.status = status;
+      const response = await apiClient.get('/quizzes', { params: queryParams });
+      const data = response.data;
+      return {
+        success: true,
+        data: {
+          data: (data.quizzes || []).map(mapQuizFromApi),
+          total: data.pagination?.total || 0,
+          page: data.pagination?.page || 1,
+          limit: data.pagination?.limit || 10,
+          totalPages: Math.ceil((data.pagination?.total || 0) / (data.pagination?.limit || 10)),
+        },
+      };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  async getQuizById(quizId) {
+    try {
+      const response = await apiClient.get(`/quizzes/${quizId}`);
+      const data = response.data;
+      const quiz = mapQuizFromApi(data.quiz);
+      quiz.questions = (data.questions || []).map((q) => ({
+        id: String(q.id),
+        text: q.question_text,
+        type: q.question_type === 'mcq' ? 'multiple-choice'
+          : q.question_type === 'true_false' ? 'true-false'
+          : q.question_type === 'multiple_correct' ? 'multiple-choice'
+          : q.question_type === 'fill_blanks' ? 'short-answer'
+          : q.question_type,
+        difficulty: q.difficulty || 'medium',
+        marks: q.marks,
+        options: [],
+        optionCount: q.option_count || 0,
+      }));
+      return { success: true, data: quiz };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  async createQuiz(quizData) {
+    try {
+      const payload = {
+        title: quizData.title,
+        description: quizData.description,
+        duration_minutes: quizData.duration,
+        total_marks: quizData.totalMarks,
+        passing_marks: quizData.passingScore,
+        negative_marking: quizData.settings?.negativeMarking ? true : false,
+        status: quizData.status || 'draft',
+      };
+      const response = await apiClient.post('/quizzes', payload);
+      const quiz = mapQuizFromApi(response.data.quiz);
+      quiz.questions = [];
+      return { success: true, data: quiz };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  async updateQuiz(quizId, quizData) {
+    try {
+      const payload = {};
+      if (quizData.title !== undefined) payload.title = quizData.title;
+      if (quizData.description !== undefined) payload.description = quizData.description;
+      if (quizData.duration !== undefined) payload.duration_minutes = quizData.duration;
+      if (quizData.totalMarks !== undefined) payload.total_marks = quizData.totalMarks;
+      if (quizData.passingScore !== undefined) payload.passing_marks = quizData.passingScore;
+      if (quizData.status !== undefined) payload.status = quizData.status;
+      if (quizData.settings?.negativeMarking !== undefined) {
+        payload.negative_marking = !!quizData.settings.negativeMarking;
+      }
+      const response = await apiClient.put(`/quizzes/${quizId}`, payload);
+      const quiz = mapQuizFromApi(response.data.quiz);
+      return { success: true, data: quiz };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  async deleteQuiz(quizId) {
+    try {
+      await apiClient.delete(`/quizzes/${quizId}`);
+      return { success: true, data: { success: true } };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
+  async publishQuiz(quizId) {
+    return this.updateQuiz(quizId, { status: 'published' });
+  }
+
+  async archiveQuiz(quizId) {
+    return this.updateQuiz(quizId, { status: 'archived' });
+  }
+
+  async addQuestionsToQuiz(quizId, _questionIds) {
+    return this.getQuizById(quizId);
+  }
+
+  async getQuizStats() {
+    try {
+      const response = await apiClient.get('/quizzes', { params: { limit: 1000 } });
+      const quizzes = response.data.quizzes || [];
+      return {
+        success: true,
+        data: {
+          totalQuizzes: quizzes.length,
+          publishedQuizzes: quizzes.filter((q) => q.status === 'published').length,
+          draftQuizzes: quizzes.filter((q) => q.status === 'draft').length,
+          archivedQuizzes: quizzes.filter((q) => q.status === 'archived').length,
+          totalQuestions: quizzes.reduce((acc, q) => acc + (q.question_count || 0), 0),
+        },
+      };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+}
+
 export const quizService = new QuizService();

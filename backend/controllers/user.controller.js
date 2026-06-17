@@ -25,8 +25,8 @@ export const getUsers = async (req, res) => {
     query += ' ORDER BY u.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute(
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query(
       'SELECT COUNT(*) as total FROM users' + (role ? ' WHERE role_id = ?' : ''),
       role ? [role] : []
     );
@@ -47,7 +47,7 @@ export const getUsers = async (req, res) => {
 
 export const getUserById = async (req, res) => {
   try {
-    const [users] = await pool.execute(
+    const [users] = await pool.query(
       `SELECT u.id, u.role_id, u.full_name, u.email, u.phone, u.profile_image,
               u.status, u.email_verified_at, u.created_at, r.role_name
        FROM users u JOIN roles r ON u.role_id = r.id
@@ -84,12 +84,12 @@ export const updateUser = async (req, res) => {
     }
 
     params.push(userId);
-    await pool.execute(
+    await pool.query(
       `UPDATE users SET ${fields.join(', ')} WHERE id = ?`,
       params
     );
 
-    const [users] = await pool.execute(
+    const [users] = await pool.query(
       'SELECT id, role_id, full_name, email, phone, profile_image, status FROM users WHERE id = ?',
       [userId]
     );
@@ -103,7 +103,7 @@ export const updateUser = async (req, res) => {
 
 export const deleteUser = async (req, res) => {
   try {
-    const [result] = await pool.execute('DELETE FROM users WHERE id = ?', [req.params.id]);
+    const [result] = await pool.query('DELETE FROM users WHERE id = ?', [req.params.id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'User not found' });

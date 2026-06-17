@@ -152,7 +152,7 @@ CREATE TABLE quizzes (
 
 CREATE TABLE questions (
   id             BIGINT       AUTO_INCREMENT PRIMARY KEY,
-  quiz_id        BIGINT       NOT NULL,
+  quiz_id        BIGINT       DEFAULT NULL,
   question_type  ENUM('mcq','multiple_correct','true_false','fill_blanks') NOT NULL DEFAULT 'mcq',
   question_text  LONGTEXT     NOT NULL,
   marks          DECIMAL(5,2) NOT NULL DEFAULT 1.00,

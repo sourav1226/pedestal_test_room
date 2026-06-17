@@ -23,8 +23,8 @@ export const getBatches = async (req, res) => {
     query += ' ORDER BY b.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM batches');
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query('SELECT COUNT(*) as total FROM batches');
 
     res.json({
       batches: rows,
@@ -42,7 +42,7 @@ export const getBatches = async (req, res) => {
 
 export const getBatchById = async (req, res) => {
   try {
-    const [batches] = await pool.execute(`
+    const [batches] = await pool.query(`
       SELECT b.*, c.course_name, u.full_name as instructor_name
       FROM batches b
       JOIN courses c ON b.course_id = c.id
@@ -54,7 +54,7 @@ export const getBatchById = async (req, res) => {
       return res.status(404).json({ error: 'Batch not found' });
     }
 
-    const [students] = await pool.execute(`
+    const [students] = await pool.query(`
       SELECT u.id, u.full_name, u.email, bs.joined_at
       FROM batch_students bs
       JOIN users u ON bs.student_id = u.id
@@ -76,12 +76,12 @@ export const createBatch = async (req, res) => {
       return res.status(400).json({ error: 'Course, instructor, batch name and start date are required' });
     }
 
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'INSERT INTO batches (course_id, instructor_id, batch_name, start_date, end_date, max_students) VALUES (?, ?, ?, ?, ?, ?)',
       [course_id, instructor_id, batch_name, start_date, end_date || null, max_students || 0]
     );
 
-    const [batch] = await pool.execute('SELECT * FROM batches WHERE id = ?', [result.insertId]);
+    const [batch] = await pool.query('SELECT * FROM batches WHERE id = ?', [result.insertId]);
     res.status(201).json({ batch: batch[0] });
   } catch (err) {
     console.error('Create batch error:', err);
@@ -108,7 +108,7 @@ export const updateBatch = async (req, res) => {
     }
 
     params.push(req.params.id);
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       `UPDATE batches SET ${fields.join(', ')} WHERE id = ?`,
       params
     );
@@ -117,7 +117,7 @@ export const updateBatch = async (req, res) => {
       return res.status(404).json({ error: 'Batch not found' });
     }
 
-    const [batch] = await pool.execute('SELECT * FROM batches WHERE id = ?', [req.params.id]);
+    const [batch] = await pool.query('SELECT * FROM batches WHERE id = ?', [req.params.id]);
     res.json({ batch: batch[0] });
   } catch (err) {
     console.error('Update batch error:', err);
@@ -127,7 +127,7 @@ export const updateBatch = async (req, res) => {
 
 export const deleteBatch = async (req, res) => {
   try {
-    const [result] = await pool.execute('DELETE FROM batches WHERE id = ?', [req.params.id]);
+    const [result] = await pool.query('DELETE FROM batches WHERE id = ?', [req.params.id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Batch not found' });
@@ -149,12 +149,12 @@ export const enrollStudent = async (req, res) => {
       return res.status(400).json({ error: 'Student ID is required' });
     }
 
-    const [batch] = await pool.execute('SELECT * FROM batches WHERE id = ?', [batchId]);
+    const [batch] = await pool.query('SELECT * FROM batches WHERE id = ?', [batchId]);
     if (batch.length === 0) {
       return res.status(404).json({ error: 'Batch not found' });
     }
 
-    const [existing] = await pool.execute(
+    const [existing] = await pool.query(
       'SELECT id FROM batch_students WHERE batch_id = ? AND student_id = ?',
       [batchId, student_id]
     );
@@ -163,7 +163,7 @@ export const enrollStudent = async (req, res) => {
     }
 
     if (batch[0].max_students > 0) {
-      const [count] = await pool.execute(
+      const [count] = await pool.query(
         'SELECT COUNT(*) as enrolled FROM batch_students WHERE batch_id = ?',
         [batchId]
       );
@@ -172,7 +172,7 @@ export const enrollStudent = async (req, res) => {
       }
     }
 
-    await pool.execute(
+    await pool.query(
       'INSERT INTO batch_students (batch_id, student_id) VALUES (?, ?)',
       [batchId, student_id]
     );

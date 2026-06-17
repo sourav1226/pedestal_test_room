@@ -38,19 +38,24 @@ export const QuizEditorPage = () => {
     const [error, setError] = useState(null);
     useEffect(() => {
         if (isEditing && existingQuiz) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setQuiz(existingQuiz);
         }
     }, [existingQuiz, isEditing]);
     const handleSave = async () => {
         try {
             setError(null);
+            if (!quiz.title.trim()) {
+                setError('Quiz title is required');
+                return;
+            }
             if (isEditing && quizId) {
                 await updateQuiz(quizId, quiz);
             }
             else {
                 await createQuiz(quiz);
             }
-            navigate('/quizzes');
+            navigate('/admin/quizzes');
         }
         catch (err) {
             setError(err.message || 'Failed to save quiz');
@@ -61,7 +66,7 @@ export const QuizEditorPage = () => {
             return;
         try {
             await publishQuiz(quizId);
-            navigate('/quizzes');
+            navigate('/admin/quizzes');
         }
         catch (err) {
             setError(err.message || 'Failed to publish quiz');
@@ -88,5 +93,5 @@ export const QuizEditorPage = () => {
             content: isEditing && quiz.id ? (_jsx(QuizPublishPanel, { quiz: quiz, onPublish: handlePublish, loading: loading })) : (_jsx("div", { className: "text-center py-8 text-gray-500", children: "Save the quiz first to publish" })),
         },
     ];
-    return (_jsxs("div", { className: "space-y-6", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsxs("div", { children: [_jsx("h1", { className: "text-3xl font-bold text-gray-900", children: isEditing ? 'Edit Quiz' : 'Create New Quiz' }), _jsx("p", { className: "text-gray-600 mt-2", children: isEditing ? 'Update quiz details and questions' : 'Add details, questions, and settings for your new quiz' })] }), _jsx(Button, { variant: "secondary", onClick: () => navigate('/quizzes'), children: "Back to Quizzes" })] }), error && _jsx(Alert, { type: "error", title: "Error", onClose: () => setError(null), children: error }), _jsx(Tabs, { tabs: tabs, activeTab: activeTab, onChange: setActiveTab }), _jsxs("div", { className: "flex gap-2 justify-end pt-4", children: [_jsx(Button, { variant: "secondary", onClick: () => navigate('/quizzes'), disabled: loading, children: "Cancel" }), _jsx(Button, { variant: "primary", onClick: handleSave, loading: loading, children: isEditing ? 'Update Quiz' : 'Create Quiz' })] })] }));
+    return (_jsxs("div", { className: "space-y-6", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsxs("div", { children: [_jsx("h1", { className: "text-3xl font-bold text-gray-900", children: isEditing ? 'Edit Quiz' : 'Create New Quiz' }), _jsx("p", { className: "text-gray-600 mt-2", children: isEditing ? 'Update quiz details and questions' : 'Add details, questions, and settings for your new quiz' })] }), _jsx(Button, { variant: "secondary", onClick: () => navigate('/admin/quizzes'), children: "Back to Quizzes" })] }), error && _jsx(Alert, { type: "error", title: "Error", onClose: () => setError(null), children: error }), _jsx(Tabs, { tabs: tabs, activeTab: activeTab, onChange: setActiveTab }), _jsxs("div", { className: "flex gap-2 justify-end pt-4", children: [_jsx(Button, { variant: "secondary", onClick: () => navigate('/admin/quizzes'), disabled: loading, children: "Cancel" }), _jsx(Button, { variant: "primary", onClick: handleSave, loading: loading, children: isEditing ? 'Update Quiz' : 'Create Quiz' })] })] }));
 };

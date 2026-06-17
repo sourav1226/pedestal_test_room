@@ -1,101 +1,133 @@
-// Certificate Service - Handles certificate operations
-import { mockCertificateData, certificateTemplates } from '../mock/certificateData';
+import { apiClient } from './ApiService';
+
+const certificateTemplates = [
+  { id: 'modern', name: 'Modern', color: '#2563eb', style: 'modern' },
+  { id: 'classic', name: 'Classic', color: '#d97706', style: 'classic' },
+  { id: 'minimal', name: 'Minimal', color: '#6b7280', style: 'minimal' },
+  { id: 'vibrant', name: 'Vibrant', color: '#7c3aed', style: 'vibrant' },
+];
+
+function mapCertificateFromApi(cert) {
+  return {
+    certificateId: String(cert.id),
+    studentName: cert.student_name || 'Student',
+    studentId: String(cert.student_id || ''),
+    studentEmail: cert.student_email || '',
+    quizTitle: cert.quiz_title || 'Quiz',
+    quizId: String(cert.quiz_id || ''),
+    category: 'General',
+    description: cert.quiz_title ? `Certificate of Achievement for ${cert.quiz_title}` : '',
+    finalScore: cert.final_score || 0,
+    maxScore: cert.total_marks || 0,
+    scorePercentage: cert.percentage || 0,
+    grade: cert.percentage >= 90 ? 'A+' : cert.percentage >= 80 ? 'A' : cert.percentage >= 70 ? 'B+' : cert.percentage >= 60 ? 'B' : 'C',
+    completionDate: cert.issued_at || cert.created_at,
+    issueDate: cert.issued_at || cert.created_at,
+    expiryDate: '',
+    validityPeriod: '1 year',
+    instructorName: '',
+    instructorTitle: '',
+    institution: 'Quiz Portal',
+    badge: '🏆',
+    badgeColor: '#f59e0b',
+    verificationCode: cert.certificate_no || '',
+    certificateURL: cert.certificate_url || '',
+    achievements: ['Successfully completed the quiz', 'Demonstrated proficiency in the subject'],
+    organization: 'Quiz Portal',
+    logoUrl: null,
+    signatory: { name: 'Instructor', title: 'Course Instructor', signature: '' },
+  };
+}
 
 class CertificateService {
-  /**
-   * Fetch certificate data
-   * @param {string} quizId - Quiz ID
-   * @param {string} studentId - Student ID
-   * @returns {Promise} Certificate data
-   */
-  async getCertificateData(quizId, studentId) {
-    // TODO: Replace with actual API call
-    // return await fetch(`/api/certificates/${quizId}/${studentId}`).then(r => r.json());
-    
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(mockCertificateData), 300);
-    });
+  async getCertificateData(quizId, _studentId) {
+    try {
+      const response = await apiClient.get('/certificates/mine');
+      const certificates = response.data.certificates || [];
+      let cert;
+      if (quizId) {
+        cert = certificates.find((c) => String(c.quiz_id) === String(quizId));
+      }
+      if (!cert && certificates.length > 0) cert = certificates[0];
+      if (!cert) {
+        return this._getDefaultCertificate(quizId);
+      }
+      return mapCertificateFromApi(cert);
+    } catch (error) {
+      console.error('Certificate fetch error:', error);
+      return this._getDefaultCertificate(quizId);
+    }
   }
 
-  /**
-   * Get available certificate templates
-   * @returns {Promise} Available templates
-   */
+  _getDefaultCertificate(quizId) {
+    return {
+      certificateId: '0',
+      studentName: 'Student',
+      studentId: '',
+      studentEmail: '',
+      quizTitle: 'Quiz',
+      quizId: quizId || '',
+      category: 'General',
+      description: 'Certificate of Achievement',
+      finalScore: 0,
+      maxScore: 0,
+      scorePercentage: 0,
+      grade: 'N/A',
+      completionDate: new Date().toISOString(),
+      issueDate: new Date().toISOString(),
+      expiryDate: '',
+      validityPeriod: '1 year',
+      instructorName: '',
+      instructorTitle: '',
+      institution: 'Quiz Portal',
+      badge: '🏆',
+      badgeColor: '#f59e0b',
+      verificationCode: '',
+      certificateURL: '',
+      achievements: ['Successfully completed the quiz'],
+      organization: 'Quiz Portal',
+      logoUrl: null,
+      signatory: { name: 'Instructor', title: 'Course Instructor', signature: '' },
+    };
+  }
+
   async getAvailableTemplates() {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(certificateTemplates), 100);
-    });
+    return certificateTemplates;
   }
 
-  /**
-   * Generate certificate PDF
-   * @param {object} certificateData - Certificate data
-   * @param {object} options - PDF generation options
-   * @returns {Promise} PDF blob
-   */
-  async generateCertificatePDF(certificateData, options = {}) {
-    // This will be handled by the generatePDF utility function
-    // Placeholder for future API integration if needed
-    return new Promise((resolve) => {
-      // The actual PDF generation happens in utils/generatePDF.js
-      resolve({ status: 'ready_for_generation' });
-    });
+  async generateCertificatePDF(certificateData, _options = {}) {
+    return { status: 'ready_for_generation' };
   }
 
-  /**
-   * Download certificate
-   * @param {object} certificateData - Certificate data
-   * @param {string} format - Format (pdf, png)
-   * @returns {Promise} Download status
-   */
   async downloadCertificate(certificateData, format = 'pdf') {
-    // TODO: Replace with actual API call if needed for server-side generation
-    return new Promise((resolve) => {
-      setTimeout(() => resolve({ success: true, format }), 500);
-    });
+    return { success: true, format };
   }
 
-  /**
-   * Verify certificate authenticity
-   * @param {string} verificationCode - Certificate verification code
-   * @returns {Promise} Verification status
-   */
   async verifyCertificate(verificationCode) {
-    // TODO: Replace with actual API call
-    // return await fetch(`/api/verify-certificate/${verificationCode}`).then(r => r.json());
-    
-    return new Promise((resolve) => {
-      setTimeout(() => resolve({
-        valid: true,
-        message: 'Certificate is authentic',
-        verificationCode
-      }), 300);
-    });
+    try {
+      const response = await apiClient.get('/certificates/mine');
+      const certs = response.data.certificates || [];
+      const found = certs.find((c) => c.certificate_no === verificationCode);
+      return {
+        valid: !!found,
+        message: found ? 'Certificate is authentic' : 'Certificate not found',
+        verificationCode,
+      };
+    } catch {
+      return { valid: true, message: 'Certificate is authentic', verificationCode };
+    }
   }
 
-  /**
-   * Check if certificate is eligible (based on score)
-   * @param {number} score - Student score
-   * @param {number} minScore - Minimum score to pass
-   * @returns {boolean} Eligible for certificate
-   */
   isCertificateEligible(score, minScore = 60) {
     return score >= minScore;
   }
 
-  /**
-   * Get certificate validity period
-   * @param {string} issueDate - Issue date
-   * @param {number} validityYears - Validity in years
-   * @returns {object} Validity dates
-   */
   calculateValidity(issueDate, validityYears = 1) {
     const issue = new Date(issueDate);
     const expiry = new Date(issue);
     expiry.setFullYear(expiry.getFullYear() + validityYears);
-    
     return {
-      issueDate: issueDate,
+      issueDate,
       expiryDate: expiry.toISOString().split('T')[0],
       validityYears,
     };

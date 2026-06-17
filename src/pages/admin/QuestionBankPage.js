@@ -18,7 +18,7 @@ export const QuestionBankPage = () => {
         search: searchTerm,
         ...filters,
     });
-    const { delete: deleteQuestion, loading: deleteLoading } = useDeleteQuestion();
+    const { delete: deleteQuestion } = useDeleteQuestion();
     const { delete: deleteQuestions, loading: deleteQuestionsLoading } = useDeleteQuestions();
     const { update: updateQuestion, loading: updateLoading } = useUpdateQuestion();
     const handleEdit = (question) => {

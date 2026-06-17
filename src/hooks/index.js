@@ -5,22 +5,25 @@
  * They handle loading states, error states, and caching where appropriate.
  * This abstraction makes it easy to switch between mock and real APIs.
  */
-import { useState, useCallback, useEffect } from 'react';
-import { quizService, questionService } from '@services/index';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { quizService, questionService, batchService, userService, courseService } from '@services/index';
 // ============ Quiz Hooks ============
 export const useQuizzes = (params) => {
     const [data, setData] = useState([]);
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const paramsRef = useRef(params);
+    paramsRef.current = params;
     const fetch = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
+            const p = paramsRef.current || {};
             const response = await quizService.getAllQuizzes({
-                page: params?.page || 1,
-                limit: params?.limit || 10,
-                ...params,
+                page: p.page || 1,
+                limit: p.limit || 10,
+                ...p,
             });
             if (response.success && response.data) {
                 setData(response.data.data);
@@ -36,7 +39,7 @@ export const useQuizzes = (params) => {
         finally {
             setLoading(false);
         }
-    }, [params]);
+    }, []);
     useEffect(() => {
         fetch();
     }, [fetch]);
@@ -87,14 +90,12 @@ export const useCreateQuiz = () => {
             if (response.success && response.data) {
                 return response.data;
             }
-            else {
-                setError(response.error || 'Failed to create quiz');
-                return null;
-            }
+            throw new Error(response.error || 'Failed to create quiz');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return null;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -113,14 +114,12 @@ export const useUpdateQuiz = () => {
             if (response.success && response.data) {
                 return response.data;
             }
-            else {
-                setError(response.error || 'Failed to update quiz');
-                return null;
-            }
+            throw new Error(response.error || 'Failed to update quiz');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return null;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -139,14 +138,12 @@ export const useDeleteQuiz = () => {
             if (response.success) {
                 return true;
             }
-            else {
-                setError(response.error || 'Failed to delete quiz');
-                return false;
-            }
+            throw new Error(response.error || 'Failed to delete quiz');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return false;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -165,14 +162,12 @@ export const usePublishQuiz = () => {
             if (response.success && response.data) {
                 return response.data;
             }
-            else {
-                setError(response.error || 'Failed to publish quiz');
-                return null;
-            }
+            throw new Error(response.error || 'Failed to publish quiz');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return null;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -186,14 +181,17 @@ export const useQuestions = (params) => {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const paramsRef = useRef(params);
+    paramsRef.current = params;
     const fetch = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
+            const p = paramsRef.current || {};
             const response = await questionService.getAllQuestions({
-                page: params?.page || 1,
-                limit: params?.limit || 10,
-                ...params,
+                page: p.page || 1,
+                limit: p.limit || 10,
+                ...p,
             });
             if (response.success && response.data) {
                 setData(response.data.data);
@@ -209,7 +207,7 @@ export const useQuestions = (params) => {
         finally {
             setLoading(false);
         }
-    }, [params]);
+    }, []);
     useEffect(() => {
         fetch();
     }, [fetch]);
@@ -256,14 +254,12 @@ export const useCreateQuestion = () => {
             if (response.success && response.data) {
                 return response.data;
             }
-            else {
-                setError(response.error || 'Failed to create question');
-                return null;
-            }
+            throw new Error(response.error || 'Failed to create question');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return null;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -282,14 +278,12 @@ export const useUpdateQuestion = () => {
             if (response.success && response.data) {
                 return response.data;
             }
-            else {
-                setError(response.error || 'Failed to update question');
-                return null;
-            }
+            throw new Error(response.error || 'Failed to update question');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return null;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -308,14 +302,12 @@ export const useDeleteQuestion = () => {
             if (response.success) {
                 return true;
             }
-            else {
-                setError(response.error || 'Failed to delete question');
-                return false;
-            }
+            throw new Error(response.error || 'Failed to delete question');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return false;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -334,14 +326,12 @@ export const useDeleteQuestions = () => {
             if (response.success && response.data) {
                 return response.data.deleted;
             }
-            else {
-                setError(response.error || 'Failed to delete questions');
-                return 0;
-            }
+            throw new Error(response.error || 'Failed to delete questions');
         }
         catch (err) {
-            setError(err.message || 'An error occurred');
-            return 0;
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
         }
         finally {
             setLoading(false);
@@ -373,4 +363,309 @@ export const useSearchQuestions = () => {
         }
     }, []);
     return { results, loading, error, search };
+};
+
+// ============ Batch Hooks ============
+export const useBatches = (params) => {
+    const [data, setData] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const paramsRef = useRef(params);
+    paramsRef.current = params;
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const p = paramsRef.current || {};
+            const response = await batchService.getAllBatches({
+                page: p.page || 1,
+                limit: p.limit || 10,
+                ...p,
+            });
+            if (response.success && response.data) {
+                setData(response.data.data);
+                setTotal(response.data.total);
+            }
+            else {
+                setError(response.error || 'Failed to fetch batches');
+            }
+        }
+        catch (err) {
+            setError(err.message || 'An error occurred');
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+    return { data, total, loading, error, refetch: fetch };
+};
+export const useBatch = (batchId) => {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(!!batchId);
+    const [error, setError] = useState(null);
+    useEffect(() => {
+        if (!batchId) {
+            setLoading(false);
+            setData(null);
+            setError(null);
+            return;
+        }
+        const fetchBatch = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await batchService.getBatchById(batchId);
+                if (response.success && response.data) {
+                    setData(response.data);
+                }
+                else {
+                    setError(response.error || 'Failed to fetch batch');
+                }
+            }
+            catch (err) {
+                setError(err.message || 'An error occurred');
+            }
+            finally {
+                setLoading(false);
+            }
+        };
+        fetchBatch();
+    }, [batchId]);
+    return { data, loading, error };
+};
+export const useCreateBatch = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const create = useCallback(async (batchData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await batchService.createBatch(batchData);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            throw new Error(response.error || 'Failed to create batch');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { create, loading, error };
+};
+export const useUpdateBatch = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const update = useCallback(async (batchId, batchData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await batchService.updateBatch(batchId, batchData);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            throw new Error(response.error || 'Failed to update batch');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { update, loading, error };
+};
+export const useDeleteBatch = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const delete_ = useCallback(async (batchId) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await batchService.deleteBatch(batchId);
+            if (response.success) {
+                return true;
+            }
+            throw new Error(response.error || 'Failed to delete batch');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { delete: delete_, loading, error };
+};
+
+// ============ User Hooks ============
+export const useUsers = (params) => {
+    const [data, setData] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const paramsRef = useRef(params);
+    paramsRef.current = params;
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const p = paramsRef.current || {};
+            const response = await userService.getAllUsers({
+                page: p.page || 1,
+                limit: p.limit || 10,
+                ...p,
+            });
+            if (response.success && response.data) {
+                setData(response.data.data);
+                setTotal(response.data.total);
+            }
+            else {
+                setError(response.error || 'Failed to fetch users');
+            }
+        }
+        catch (err) {
+            setError(err.message || 'An error occurred');
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+    return { data, total, loading, error, refetch: fetch };
+};
+export const useUser = (userId) => {
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(!!userId);
+    const [error, setError] = useState(null);
+    useEffect(() => {
+        if (!userId) {
+            setLoading(false);
+            setData(null);
+            setError(null);
+            return;
+        }
+        const fetchUser = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const response = await userService.getUserById(userId);
+                if (response.success && response.data) {
+                    setData(response.data);
+                }
+                else {
+                    setError(response.error || 'Failed to fetch user');
+                }
+            }
+            catch (err) {
+                setError(err.message || 'An error occurred');
+            }
+            finally {
+                setLoading(false);
+            }
+        };
+        fetchUser();
+    }, [userId]);
+    return { data, loading, error };
+};
+export const useUpdateUser = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const update = useCallback(async (userId, userData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await userService.updateUser(userId, userData);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            throw new Error(response.error || 'Failed to update user');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { update, loading, error };
+};
+export const useDeleteUser = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const delete_ = useCallback(async (userId) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await userService.deleteUser(userId);
+            if (response.success) {
+                return true;
+            }
+            throw new Error(response.error || 'Failed to delete user');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { delete: delete_, loading, error };
+};
+
+// ============ Course Hooks ============
+export const useCourses = (params) => {
+    const [data, setData] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const paramsRef = useRef(params);
+    paramsRef.current = params;
+    const fetch = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const p = paramsRef.current || {};
+            const response = await courseService.getAllCourses({
+                page: p.page || 1,
+                limit: p.limit || 1000,
+                ...p,
+            });
+            if (response.success && response.data) {
+                setData(response.data.data);
+                setTotal(response.data.total);
+            }
+            else {
+                setError(response.error || 'Failed to fetch courses');
+            }
+        }
+        catch (err) {
+            setError(err.message || 'An error occurred');
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    useEffect(() => {
+        fetch();
+    }, [fetch]);
+    return { data, total, loading, error, refetch: fetch };
 };

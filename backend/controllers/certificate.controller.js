@@ -21,8 +21,8 @@ export const getCertificates = async (req, res) => {
     query += ' ORDER BY c.issued_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM certificates');
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query('SELECT COUNT(*) as total FROM certificates');
 
     res.json({
       certificates: rows,
@@ -40,7 +40,7 @@ export const getCertificates = async (req, res) => {
 
 export const getCertificateById = async (req, res) => {
   try {
-    const [certificates] = await pool.execute(`
+    const [certificates] = await pool.query(`
       SELECT c.*, u.full_name as student_name, u.email as student_email,
              q.title as quiz_title, q.total_marks, q.passing_marks,
              r.final_score, r.percentage, r.result_status
@@ -64,7 +64,7 @@ export const getCertificateById = async (req, res) => {
 
 export const getMyCertificates = async (req, res) => {
   try {
-    const [certificates] = await pool.execute(`
+    const [certificates] = await pool.query(`
       SELECT c.*, q.title as quiz_title, q.total_marks, r.final_score, r.percentage, r.result_status
       FROM certificates c
       JOIN quizzes q ON c.quiz_id = q.id
@@ -83,7 +83,7 @@ export const getMyCertificates = async (req, res) => {
 // Called when result is pass and certificate should be issued
 export const issueCertificate = async (studentId, quizId) => {
   try {
-    const [existing] = await pool.execute(
+    const [existing] = await pool.query(
       'SELECT id FROM certificates WHERE student_id = ? AND quiz_id = ?',
       [studentId, quizId]
     );
@@ -95,7 +95,7 @@ export const issueCertificate = async (studentId, quizId) => {
     const certificateNo = generateCertificateNo();
     const url = `/certificates/${certificateNo}.pdf`;
 
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'INSERT INTO certificates (student_id, quiz_id, certificate_no, certificate_url) VALUES (?, ?, ?, ?)',
       [studentId, quizId, certificateNo, url]
     );

@@ -20,8 +20,8 @@ export const getResults = async (req, res) => {
     query += ' ORDER BY r.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM results');
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query('SELECT COUNT(*) as total FROM results');
 
     res.json({
       results: rows,
@@ -39,7 +39,7 @@ export const getResults = async (req, res) => {
 
 export const getResultById = async (req, res) => {
   try {
-    const [results] = await pool.execute(`
+    const [results] = await pool.query(`
       SELECT r.*, u.full_name as student_name, u.email as student_email,
              q.title as quiz_title, q.total_marks, q.passing_marks,
              qa.started_at, qa.submitted_at, qa.rank_position
@@ -54,7 +54,7 @@ export const getResultById = async (req, res) => {
       return res.status(404).json({ error: 'Result not found' });
     }
 
-    const [answers] = await pool.execute(`
+    const [answers] = await pool.query(`
       SELECT aa.*, q.question_text, q.question_type, q.marks, q.explanation,
              qo.option_text as selected_text,
              (SELECT option_text FROM question_options WHERE question_id = aa.question_id AND is_correct = TRUE LIMIT 1) as correct_text
@@ -73,7 +73,7 @@ export const getResultById = async (req, res) => {
 
 export const getQuizResults = async (req, res) => {
   try {
-    const [results] = await pool.execute(`
+    const [results] = await pool.query(`
       SELECT r.*, u.full_name as student_name, u.email as student_email,
              qa.rank_position
       FROM results r

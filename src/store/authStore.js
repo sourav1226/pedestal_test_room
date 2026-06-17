@@ -34,9 +34,9 @@ export const useAuthStore = create((set, get) => ({
   },
 
   logout: async () => {
-    const { refreshToken, accessToken } = get();
+    const { refreshToken } = get();
     try {
-      await authService.logout(refreshToken, accessToken);
+      await authService.logout(refreshToken);
     } catch {
       // proceed with local logout even if API call fails
     }

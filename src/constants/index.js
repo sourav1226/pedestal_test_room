@@ -1,6 +1,6 @@
 // Application constants
-export const APP_NAME = 'Quiz Platform Admin';
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+export const APP_NAME = 'Quiz Portal';
+export const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 // Difficulty levels
 export const DIFFICULTY_LEVELS = {
     EASY: 'easy',

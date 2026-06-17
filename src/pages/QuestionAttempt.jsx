@@ -49,7 +49,7 @@ function QuestionAttempt({ onSubmit }) {
             <div className="logo-box">
               <i className="bi bi-gem"></i>
             </div>
-            <span className="ms-2 fw-bold">Pedestal Test Room</span>
+            <span className="ms-2 fw-bold">Quiz Portal</span>
           </Navbar.Brand>
           <div className="d-flex align-items-center gap-3">
             <span className="earn-points">

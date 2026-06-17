@@ -28,7 +28,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const [users] = await pool.execute(
+    const [users] = await pool.query(
       'SELECT u.*, r.role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.email = ?',
       [email]
     );
@@ -50,7 +50,7 @@ export const login = async (req, res) => {
 
     const tokens = generateTokens(user);
 
-    await pool.execute(
+    await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
       [user.id, tokens.refreshToken]
     );
@@ -75,7 +75,7 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: 'Full name, email and password are required' });
     }
 
-    const [existing] = await pool.execute('SELECT id FROM users WHERE email = ?', [email]);
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
     if (existing.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
     }
@@ -83,12 +83,12 @@ export const register = async (req, res) => {
     const hashedPassword = await hashPassword(password);
     const userRoleId = role_id || 3; // default to Student
 
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'INSERT INTO users (role_id, full_name, email, phone, password) VALUES (?, ?, ?, ?, ?)',
       [userRoleId, full_name, email, phone || null, hashedPassword]
     );
 
-    const [newUser] = await pool.execute(
+    const [newUser] = await pool.query(
       'SELECT u.*, r.role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
       [result.insertId]
     );
@@ -96,7 +96,7 @@ export const register = async (req, res) => {
     const user = newUser[0];
     const tokens = generateTokens(user);
 
-    await pool.execute(
+    await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
       [user.id, tokens.refreshToken]
     );
@@ -121,7 +121,7 @@ export const refreshToken = async (req, res) => {
       return res.status(400).json({ error: 'Refresh token is required' });
     }
 
-    const [tokens] = await pool.execute(
+    const [tokens] = await pool.query(
       'SELECT * FROM refresh_tokens WHERE token = ? AND expires_at > NOW()',
       [refresh_token]
     );
@@ -130,7 +130,7 @@ export const refreshToken = async (req, res) => {
       return res.status(401).json({ error: 'Invalid or expired refresh token' });
     }
 
-    const [users] = await pool.execute(
+    const [users] = await pool.query(
       'SELECT u.*, r.role_name FROM users u JOIN roles r ON u.role_id = r.id WHERE u.id = ?',
       [tokens[0].user_id]
     );
@@ -141,11 +141,11 @@ export const refreshToken = async (req, res) => {
 
     const user = users[0];
 
-    await pool.execute('DELETE FROM refresh_tokens WHERE token = ?', [refresh_token]);
+    await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refresh_token]);
 
     const newTokens = generateTokens(user);
 
-    await pool.execute(
+    await pool.query(
       'INSERT INTO refresh_tokens (user_id, token, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))',
       [user.id, newTokens.refreshToken]
     );
@@ -167,10 +167,10 @@ export const logout = async (req, res) => {
     const { refresh_token } = req.body;
 
     if (refresh_token) {
-      await pool.execute('DELETE FROM refresh_tokens WHERE token = ?', [refresh_token]);
+      await pool.query('DELETE FROM refresh_tokens WHERE token = ?', [refresh_token]);
     }
 
-    await pool.execute('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.id]);
+    await pool.query('DELETE FROM refresh_tokens WHERE user_id = ?', [req.user.id]);
 
     res.json({ message: 'Logged out successfully' });
   } catch (err) {
@@ -181,7 +181,7 @@ export const logout = async (req, res) => {
 
 export const me = async (req, res) => {
   try {
-    const [users] = await pool.execute(
+    const [users] = await pool.query(
       `SELECT u.id, u.role_id, u.full_name, u.email, u.phone, u.profile_image,
               u.status, u.email_verified_at, u.created_at, r.role_name
        FROM users u JOIN roles r ON u.role_id = r.id

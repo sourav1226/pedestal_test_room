@@ -16,8 +16,8 @@ export const getCourses = async (req, res) => {
     query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM courses');
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query('SELECT COUNT(*) as total FROM courses');
 
     res.json({
       courses: rows,
@@ -35,7 +35,7 @@ export const getCourses = async (req, res) => {
 
 export const getCourseById = async (req, res) => {
   try {
-    const [courses] = await pool.execute(
+    const [courses] = await pool.query(
       'SELECT c.*, GROUP_CONCAT(s.id) as subject_ids, GROUP_CONCAT(s.subject_name) as subject_names FROM courses c LEFT JOIN subjects s ON c.id = s.course_id WHERE c.id = ? GROUP BY c.id',
       [req.params.id]
     );
@@ -59,12 +59,12 @@ export const createCourse = async (req, res) => {
       return res.status(400).json({ error: 'Course name is required' });
     }
 
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       'INSERT INTO courses (course_name, description, duration_days) VALUES (?, ?, ?)',
       [course_name, description || null, duration_days || 0]
     );
 
-    const [course] = await pool.execute('SELECT * FROM courses WHERE id = ?', [result.insertId]);
+    const [course] = await pool.query('SELECT * FROM courses WHERE id = ?', [result.insertId]);
     res.status(201).json({ course: course[0] });
   } catch (err) {
     console.error('Create course error:', err);
@@ -89,7 +89,7 @@ export const updateCourse = async (req, res) => {
     }
 
     params.push(req.params.id);
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       `UPDATE courses SET ${fields.join(', ')} WHERE id = ?`,
       params
     );
@@ -98,7 +98,7 @@ export const updateCourse = async (req, res) => {
       return res.status(404).json({ error: 'Course not found' });
     }
 
-    const [course] = await pool.execute('SELECT * FROM courses WHERE id = ?', [req.params.id]);
+    const [course] = await pool.query('SELECT * FROM courses WHERE id = ?', [req.params.id]);
     res.json({ course: course[0] });
   } catch (err) {
     console.error('Update course error:', err);
@@ -108,7 +108,7 @@ export const updateCourse = async (req, res) => {
 
 export const deleteCourse = async (req, res) => {
   try {
-    const [result] = await pool.execute('DELETE FROM courses WHERE id = ?', [req.params.id]);
+    const [result] = await pool.query('DELETE FROM courses WHERE id = ?', [req.params.id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Course not found' });

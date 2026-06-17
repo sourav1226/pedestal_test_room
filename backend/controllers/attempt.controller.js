@@ -12,7 +12,7 @@ export const startAttempt = async (req, res) => {
       return res.status(400).json({ error: 'Quiz ID is required' });
     }
 
-    const [quizzes] = await connection.execute(
+    const [quizzes] = await connection.query(
       'SELECT * FROM quizzes WHERE id = ? AND status IN ("published", "active")',
       [quiz_id]
     );
@@ -31,26 +31,26 @@ export const startAttempt = async (req, res) => {
       return res.status(400).json({ error: 'Quiz has already ended' });
     }
 
-    const [existing] = await connection.execute(
+    const [existing] = await connection.query(
       'SELECT id FROM quiz_attempts WHERE quiz_id = ? AND student_id = ? AND status = "in_progress"',
       [quiz_id, student_id]
     );
 
     if (existing.length > 0) {
       // Resume existing attempt
-      const [attempt] = await connection.execute(
+      const [attempt] = await connection.query(
         'SELECT * FROM quiz_attempts WHERE id = ?', [existing[0].id]
       );
       await connection.commit();
       return res.json({ attempt: attempt[0], resumed: true });
     }
 
-    const [result] = await connection.execute(
+    const [result] = await connection.query(
       'INSERT INTO quiz_attempts (quiz_id, student_id, started_at, status) VALUES (?, ?, NOW(), "in_progress")',
       [quiz_id, student_id]
     );
 
-    const [attempt] = await connection.execute(
+    const [attempt] = await connection.query(
       'SELECT * FROM quiz_attempts WHERE id = ?', [result.insertId]
     );
 
@@ -73,7 +73,7 @@ export const submitAttempt = async (req, res) => {
     const attemptId = req.params.id;
     const { answers } = req.body;
 
-    const [attempts] = await connection.execute(
+    const [attempts] = await connection.query(
       'SELECT qa.*, q.negative_marking, q.passing_marks, q.total_marks FROM quiz_attempts qa JOIN quizzes q ON qa.quiz_id = q.id WHERE qa.id = ? AND qa.student_id = ?',
       [attemptId, req.user.id]
     );
@@ -95,7 +95,7 @@ export const submitAttempt = async (req, res) => {
         const { question_id, selected_option_id, answer_text } = answer;
 
         // Get the question and correct options
-        const [questions] = await connection.execute(
+        const [questions] = await connection.query(
           'SELECT * FROM questions WHERE id = ?', [question_id]
         );
 
@@ -105,7 +105,7 @@ export const submitAttempt = async (req, res) => {
         let marksAwarded = 0;
 
         if (question.question_type === 'mcq' || question.question_type === 'true_false') {
-          const [options] = await connection.execute(
+          const [options] = await connection.query(
             'SELECT is_correct FROM question_options WHERE id = ? AND question_id = ?',
             [selected_option_id, question_id]
           );
@@ -115,7 +115,7 @@ export const submitAttempt = async (req, res) => {
             marksAwarded = -parseFloat(question.marks) * 0.25; // 25% negative
           }
         } else if (question.question_type === 'multiple_correct') {
-          const [correctOptions] = await connection.execute(
+          const [correctOptions] = await connection.query(
             'SELECT id FROM question_options WHERE question_id = ? AND is_correct = TRUE',
             [question_id]
           );
@@ -139,7 +139,7 @@ export const submitAttempt = async (req, res) => {
           }
         }
 
-        await connection.execute(
+        await connection.query(
           'INSERT INTO attempt_answers (attempt_id, question_id, selected_option_id, answer_text, marks_awarded) VALUES (?, ?, ?, ?, ?)',
           [attemptId, question_id, selected_option_id || null, answer_text || null, marksAwarded]
         );
@@ -154,37 +154,37 @@ export const submitAttempt = async (req, res) => {
 
     const resultStatus = percentage >= attempt.passing_marks ? 'pass' : 'fail';
 
-    await connection.execute(
+    await connection.query(
       'UPDATE quiz_attempts SET submitted_at = NOW(), total_score = ?, percentage = ?, status = "completed" WHERE id = ?',
       [totalScore, percentage, attemptId]
     );
 
     // Insert result
-    const [existingResult] = await connection.execute(
+    const [existingResult] = await connection.query(
       'SELECT id FROM results WHERE attempt_id = ?', [attemptId]
     );
 
     if (existingResult.length === 0) {
-      await connection.execute(
+      await connection.query(
         'INSERT INTO results (attempt_id, student_id, quiz_id, final_score, percentage, result_status) VALUES (?, ?, ?, ?, ?, ?)',
         [attemptId, req.user.id, attempt.quiz_id, totalScore, percentage, resultStatus]
       );
     }
 
     // Update leaderboard
-    const [allAttempts] = await connection.execute(
+    const [allAttempts] = await connection.query(
       'SELECT id, student_id, total_score FROM quiz_attempts WHERE quiz_id = ? AND status = "completed" ORDER BY total_score DESC',
       [attempt.quiz_id]
     );
 
     for (let i = 0; i < allAttempts.length; i++) {
-      await connection.execute(
+      await connection.query(
         'INSERT INTO leaderboards (quiz_id, student_id, score, rank_position) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE score = VALUES(score), rank_position = VALUES(rank_position)',
         [attempt.quiz_id, allAttempts[i].student_id, allAttempts[i].total_score, i + 1]
       );
     }
 
-    await connection.execute(
+    await connection.query(
       'UPDATE quiz_attempts SET rank_position = ? WHERE id = ?',
       [allAttempts.findIndex(a => a.id === parseInt(attemptId)) + 1, attemptId]
     );
@@ -207,7 +207,7 @@ export const submitAttempt = async (req, res) => {
 };
 
 async function getCorrectAnswer(connection, questionId) {
-  const [options] = await connection.execute(
+  const [options] = await connection.query(
     'SELECT option_text FROM question_options WHERE question_id = ? AND is_correct = TRUE LIMIT 1',
     [questionId]
   );
@@ -216,7 +216,7 @@ async function getCorrectAnswer(connection, questionId) {
 
 export const getAttempt = async (req, res) => {
   try {
-    const [attempts] = await pool.execute(`
+    const [attempts] = await pool.query(`
       SELECT qa.*, q.title as quiz_title, q.duration_minutes, q.total_marks, q.passing_marks, q.negative_marking
       FROM quiz_attempts qa
       JOIN quizzes q ON qa.quiz_id = q.id
@@ -227,7 +227,7 @@ export const getAttempt = async (req, res) => {
       return res.status(404).json({ error: 'Attempt not found' });
     }
 
-    const [answers] = await pool.execute(`
+    const [answers] = await pool.query(`
       SELECT aa.*, q.question_type, q.question_text, q.marks
       FROM attempt_answers aa
       JOIN questions q ON aa.question_id = q.id
@@ -243,7 +243,7 @@ export const getAttempt = async (req, res) => {
 
 export const getStudentAttempts = async (req, res) => {
   try {
-    const [attempts] = await pool.execute(`
+    const [attempts] = await pool.query(`
       SELECT qa.*, q.title as quiz_title, q.total_marks
       FROM quiz_attempts qa
       JOIN quizzes q ON qa.quiz_id = q.id

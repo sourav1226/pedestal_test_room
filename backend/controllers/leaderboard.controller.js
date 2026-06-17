@@ -5,7 +5,7 @@ export const getLeaderboard = async (req, res) => {
     const { quizId } = req.params;
     const { limit = 20 } = req.query;
 
-    const [leaderboard] = await pool.execute(`
+    const [leaderboard] = await pool.query(`
       SELECT l.rank_position, l.score, u.id as student_id, u.full_name as student_name, u.profile_image
       FROM leaderboards l
       JOIN users u ON l.student_id = u.id
@@ -14,7 +14,7 @@ export const getLeaderboard = async (req, res) => {
       LIMIT ?
     `, [quizId, parseInt(limit)]);
 
-    const [quiz] = await pool.execute(
+    const [quiz] = await pool.query(
       'SELECT id, title, total_marks FROM quizzes WHERE id = ?',
       [quizId]
     );

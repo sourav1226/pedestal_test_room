@@ -22,8 +22,8 @@ export const getQuizzes = async (req, res) => {
     query += ' ORDER BY q.created_at DESC LIMIT ? OFFSET ?';
     params.push(parseInt(limit), offset);
 
-    const [rows] = await pool.execute(query, params);
-    const [countResult] = await pool.execute('SELECT COUNT(*) as total FROM quizzes');
+    const [rows] = await pool.query(query, params);
+    const [countResult] = await pool.query('SELECT COUNT(*) as total FROM quizzes');
 
     res.json({
       quizzes: rows,
@@ -41,7 +41,7 @@ export const getQuizzes = async (req, res) => {
 
 export const getQuizById = async (req, res) => {
   try {
-    const [quizzes] = await pool.execute(`
+    const [quizzes] = await pool.query(`
       SELECT q.*, u.full_name as created_by_name, c.course_name, b.batch_name
       FROM quizzes q
       JOIN users u ON q.created_by = u.id
@@ -54,7 +54,7 @@ export const getQuizById = async (req, res) => {
       return res.status(404).json({ error: 'Quiz not found' });
     }
 
-    const [questions] = await pool.execute(`
+    const [questions] = await pool.query(`
       SELECT q.*, 
              (SELECT COUNT(*) FROM question_options WHERE question_id = q.id) as option_count
       FROM questions q
@@ -81,7 +81,7 @@ export const createQuiz = async (req, res) => {
       return res.status(400).json({ error: 'Title, duration and total marks are required' });
     }
 
-    const [result] = await pool.execute(`
+    const [result] = await pool.query(`
       INSERT INTO quizzes (title, description, course_id, batch_id, created_by,
         duration_minutes, total_marks, passing_marks, negative_marking, status, start_time, end_time)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -91,7 +91,7 @@ export const createQuiz = async (req, res) => {
       negative_marking || false, status || 'draft', start_time || null, end_time || null
     ]);
 
-    const [quiz] = await pool.execute('SELECT * FROM quizzes WHERE id = ?', [result.insertId]);
+    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [result.insertId]);
     res.status(201).json({ quiz: quiz[0] });
   } catch (err) {
     console.error('Create quiz error:', err);
@@ -122,7 +122,7 @@ export const updateQuiz = async (req, res) => {
     }
 
     params.push(req.params.id);
-    const [result] = await pool.execute(
+    const [result] = await pool.query(
       `UPDATE quizzes SET ${fields.join(', ')} WHERE id = ?`,
       params
     );
@@ -131,7 +131,7 @@ export const updateQuiz = async (req, res) => {
       return res.status(404).json({ error: 'Quiz not found' });
     }
 
-    const [quiz] = await pool.execute('SELECT * FROM quizzes WHERE id = ?', [req.params.id]);
+    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [req.params.id]);
     res.json({ quiz: quiz[0] });
   } catch (err) {
     console.error('Update quiz error:', err);
@@ -141,7 +141,7 @@ export const updateQuiz = async (req, res) => {
 
 export const deleteQuiz = async (req, res) => {
   try {
-    const [result] = await pool.execute('DELETE FROM quizzes WHERE id = ?', [req.params.id]);
+    const [result] = await pool.query('DELETE FROM quizzes WHERE id = ?', [req.params.id]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Quiz not found' });

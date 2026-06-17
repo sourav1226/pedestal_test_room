@@ -66,12 +66,12 @@ WHERE permission_name IN (
 -- Users (password: "password123" bcrypt hash)
 -- ============================================================
 INSERT INTO users (role_id, full_name, email, phone, password, status) VALUES
-(1, 'Admin User',   'admin@quizapp.com',  '9999999991', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'active'),
-(2, 'Instructor A', 'instructor@quizapp.com', '9999999992', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'active'),
-(3, 'Student One',  'student1@quizapp.com', '9999999993', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'active'),
-(3, 'Student Two',  'student2@quizapp.com', '9999999994', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'active'),
-(3, 'Student Three','student3@quizapp.com', '9999999995', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'inactive'),
-(4, 'Moderator One','moderator@quizapp.com','9999999996', '$2b$10$KNVPVPUqTIkgnJAMXomAT.an/.Wn.H.xot40PmQBXir8apL0MS.6S', 'active');
+(1, 'Admin User',   'admin@quizapp.com',  '9999999991', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'active'),
+(2, 'Instructor A', 'instructor@quizapp.com', '9999999992', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'active'),
+(3, 'Student One',  'student1@quizapp.com', '9999999993', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'active'),
+(3, 'Student Two',  'student2@quizapp.com', '9999999994', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'active'),
+(3, 'Student Three','student3@quizapp.com', '9999999995', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'inactive'),
+(4, 'Moderator One','moderator@quizapp.com','9999999996', '$2b$10$8DFA1dXzSblj4MVrCp87dufew3TDgkAbT2bcFwJpzb8Lcpd4QZTFm', 'active');
 
 -- ============================================================
 -- Courses
