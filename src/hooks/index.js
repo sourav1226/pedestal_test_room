@@ -15,11 +15,10 @@ export const useQuizzes = (params) => {
     const [error, setError] = useState(null);
     const paramsRef = useRef(params);
     paramsRef.current = params;
-    const fetch = useCallback(async () => {
+    const fetch = useCallback(async (p) => {
         setLoading(true);
         setError(null);
         try {
-            const p = paramsRef.current || {};
             const response = await quizService.getAllQuizzes({
                 page: p.page || 1,
                 limit: p.limit || 10,
@@ -41,9 +40,9 @@ export const useQuizzes = (params) => {
         }
     }, []);
     useEffect(() => {
-        fetch();
-    }, [fetch]);
-    return { data, total, loading, error, refetch: fetch };
+        fetch(params || {});
+    }, [fetch, params?.page, params?.limit, params?.status]);
+    return { data, total, loading, error, refetch: () => fetch(paramsRef.current || {}) };
 };
 export const useQuiz = (quizId) => {
     const [data, setData] = useState(null);
@@ -154,11 +153,11 @@ export const useDeleteQuiz = () => {
 export const usePublishQuiz = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const publish = useCallback(async (quizId) => {
+    const publish = useCallback(async (quizId, startTime, endTime) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await quizService.publishQuiz(quizId);
+            const response = await quizService.publishQuiz(quizId, startTime, endTime);
             if (response.success && response.data) {
                 return response.data;
             }
@@ -518,11 +517,10 @@ export const useUsers = (params) => {
     const [error, setError] = useState(null);
     const paramsRef = useRef(params);
     paramsRef.current = params;
-    const fetch = useCallback(async () => {
+    const fetch = useCallback(async (p) => {
         setLoading(true);
         setError(null);
         try {
-            const p = paramsRef.current || {};
             const response = await userService.getAllUsers({
                 page: p.page || 1,
                 limit: p.limit || 10,
@@ -544,9 +542,9 @@ export const useUsers = (params) => {
         }
     }, []);
     useEffect(() => {
-        fetch();
-    }, [fetch]);
-    return { data, total, loading, error, refetch: fetch };
+        fetch(params || {});
+    }, [fetch, params?.page, params?.limit, params?.role, params?.status]);
+    return { data, total, loading, error, refetch: () => fetch(paramsRef.current || {}) };
 };
 export const useUser = (userId) => {
     const [data, setData] = useState(null);
@@ -629,6 +627,30 @@ export const useDeleteUser = () => {
         }
     }, []);
     return { delete: delete_, loading, error };
+};
+export const useCreateUser = () => {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const create = useCallback(async (userData) => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await userService.createUser(userData);
+            if (response.success && response.data) {
+                return response.data;
+            }
+            throw new Error(response.error || 'Failed to create user');
+        }
+        catch (err) {
+            const msg = err.message || 'An error occurred';
+            setError(msg);
+            throw new Error(msg);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+    return { create, loading, error };
 };
 
 // ============ Course Hooks ============

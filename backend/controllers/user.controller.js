@@ -1,4 +1,5 @@
 import pool from '../config/db.config.js';
+import { hashPassword } from '../utils/helpers.js';
 
 export const getUsers = async (req, res) => {
   try {
@@ -26,10 +27,18 @@ export const getUsers = async (req, res) => {
     params.push(parseInt(limit), offset);
 
     const [rows] = await pool.query(query, params);
-    const [countResult] = await pool.query(
-      'SELECT COUNT(*) as total FROM users' + (role ? ' WHERE role_id = ?' : ''),
-      role ? [role] : []
-    );
+
+    let countQuery = 'SELECT COUNT(*) as total FROM users WHERE 1=1';
+    const countParams = [];
+    if (role) {
+      countQuery += ' AND role_id = ?';
+      countParams.push(role);
+    }
+    if (status) {
+      countQuery += ' AND status = ?';
+      countParams.push(status);
+    }
+    const [countResult] = await pool.query(countQuery, countParams);
 
     res.json({
       users: rows,
@@ -41,6 +50,42 @@ export const getUsers = async (req, res) => {
     });
   } catch (err) {
     console.error('Get users error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+export const createUser = async (req, res) => {
+  try {
+    const { full_name, email, phone, password, role_id, status } = req.body;
+
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ error: 'Full name, email and password are required' });
+    }
+
+    const [existing] = await pool.query('SELECT id FROM users WHERE email = ?', [email]);
+    if (existing.length > 0) {
+      return res.status(409).json({ error: 'Email already registered' });
+    }
+
+    const hashedPassword = await hashPassword(password);
+    const userRoleId = role_id || 3;
+
+    const [result] = await pool.query(
+      'INSERT INTO users (role_id, full_name, email, phone, password, status) VALUES (?, ?, ?, ?, ?, ?)',
+      [userRoleId, full_name, email, phone || null, hashedPassword, status || 'active']
+    );
+
+    const [newUser] = await pool.query(
+      `SELECT u.id, u.role_id, u.full_name, u.email, u.phone, u.profile_image,
+              u.status, u.email_verified_at, u.created_at, r.role_name
+       FROM users u JOIN roles r ON u.role_id = r.id
+       WHERE u.id = ?`,
+      [result.insertId]
+    );
+
+    res.status(201).json({ user: newUser[0] });
+  } catch (err) {
+    console.error('Create user error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 };

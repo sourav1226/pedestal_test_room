@@ -38,6 +38,24 @@ class UserService {
     }
   }
 
+  async createUser(userData) {
+    try {
+      const payload = {
+        full_name: userData.fullName,
+        email: userData.email,
+        phone: userData.phone || null,
+        password: userData.password,
+        role_id: userData.roleId,
+        status: userData.status || 'active',
+      };
+      const response = await apiClient.post('/users', payload);
+      const user = mapUserFromApi(response.data.user);
+      return { success: true, data: user };
+    } catch (error) {
+      return handleApiError(error);
+    }
+  }
+
   async getUserById(userId) {
     try {
       const response = await apiClient.get(`/users/${userId}`);

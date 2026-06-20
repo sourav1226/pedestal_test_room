@@ -20,9 +20,14 @@ export const QuizManagementPage = () => {
             }
         }
     };
-    const handlePublish = async (quizId) => {
+    const handlePublish = async (quizId, quiz) => {
+        const pad = (n) => String(n).padStart(2, '0');
+        const now = new Date();
+        const end = new Date(now.getTime() + (quiz.duration || 30) * 60000);
+        const startTime = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        const endTime = `${end.getFullYear()}-${pad(end.getMonth()+1)}-${pad(end.getDate())}T${pad(end.getHours())}:${pad(end.getMinutes())}`;
         try {
-            await publishQuiz(quizId);
+            await publishQuiz(quizId, startTime, endTime);
             refetch();
         } catch {
             // Error handled by hook; component could read usePublishQuiz().error
@@ -56,7 +61,7 @@ export const QuizManagementPage = () => {
         {
             key: 'id',
             header: 'Actions',
-            render: (_, row) => (_jsxs("div", { className: "flex gap-2", children: [_jsx(Button, { size: "sm", onClick: () => navigate(`/admin/quizzes/${row.id}/edit`), children: "Edit" }), row.status === 'draft' && (_jsx(Button, { size: "sm", variant: "success", onClick: () => handlePublish(row.id), children: "Publish" })), _jsx(Button, { size: "sm", variant: "danger", onClick: () => handleDelete(row.id), children: "Delete" })] })),
+            render: (_, row) => (_jsxs("div", { className: "flex gap-2", children: [_jsx(Button, { size: "sm", onClick: () => navigate(`/admin/quizzes/${row.id}/edit`), children: "Edit" }),         row.status === 'draft' && (_jsx(Button, { size: "sm", variant: "success", onClick: () => handlePublish(row.id, row), children: "Publish" })), _jsx(Button, { size: "sm", variant: "danger", onClick: () => handleDelete(row.id), children: "Delete" })] })),
         },
     ];
     const totalPages = Math.ceil(total / 10);

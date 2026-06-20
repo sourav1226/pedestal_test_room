@@ -94,7 +94,10 @@ export const createQuiz = async (req, res) => {
     const {
       title, description, course_id, batch_id,
       duration_minutes, total_marks, passing_marks,
-      negative_marking, status, start_time, end_time
+      negative_marking, shuffle_questions, shuffle_options,
+      show_results_immediately, allow_review, allow_skip, single_attempt,
+      status, start_time, end_time,
+      question_ids
     } = req.body;
 
     if (!title || !duration_minutes || !total_marks) {
@@ -103,16 +106,41 @@ export const createQuiz = async (req, res) => {
 
     const [result] = await pool.query(`
       INSERT INTO quizzes (title, description, course_id, batch_id, created_by,
-        duration_minutes, total_marks, passing_marks, negative_marking, status, start_time, end_time)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        duration_minutes, total_marks, passing_marks, negative_marking,
+        shuffle_questions, shuffle_options, show_results_immediately,
+        allow_review, allow_skip, single_attempt,
+        status, start_time, end_time)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       title, description || null, course_id || null, batch_id || null,
       req.user.id, duration_minutes, total_marks, passing_marks || 0,
-      negative_marking || false, status || 'draft', start_time || null, end_time || null
+      negative_marking || false,
+      shuffle_questions ?? true, shuffle_options ?? true,
+      show_results_immediately ?? false, allow_review ?? true,
+      allow_skip ?? false, single_attempt ?? false,
+      status || 'draft', start_time || null, end_time || null
     ]);
 
-    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [result.insertId]);
-    res.status(201).json({ quiz: quiz[0] });
+    const quizId = result.insertId;
+
+    if (question_ids && Array.isArray(question_ids) && question_ids.length > 0) {
+      const placeholders = question_ids.map(() => '?').join(',');
+      await pool.query(
+        `UPDATE questions SET quiz_id = ? WHERE id IN (${placeholders})`,
+        [quizId, ...question_ids]
+      );
+    }
+
+    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [quizId]);
+    const [questions] = await pool.query(`
+      SELECT q.*, 
+             (SELECT COUNT(*) FROM question_options WHERE question_id = q.id) as option_count
+      FROM questions q
+      WHERE q.quiz_id = ?
+      ORDER BY q.id
+    `, [quizId]);
+
+    res.status(201).json({ quiz: quiz[0], questions });
   } catch (err) {
     console.error('Create quiz error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -121,13 +149,22 @@ export const createQuiz = async (req, res) => {
 
 export const updateQuiz = async (req, res) => {
   try {
+    const quizId = req.params.id;
+
+    const [existing] = await pool.query('SELECT id FROM quizzes WHERE id = ?', [quizId]);
+    if (existing.length === 0) {
+      return res.status(404).json({ error: 'Quiz not found' });
+    }
+
     const fields = [];
     const params = [];
 
     const allowedFields = [
       'title', 'description', 'course_id', 'batch_id',
       'duration_minutes', 'total_marks', 'passing_marks',
-      'negative_marking', 'status', 'start_time', 'end_time'
+      'negative_marking', 'shuffle_questions', 'shuffle_options',
+      'show_results_immediately', 'allow_review', 'allow_skip', 'single_attempt',
+      'status', 'start_time', 'end_time'
     ];
 
     for (const field of allowedFields) {
@@ -137,22 +174,35 @@ export const updateQuiz = async (req, res) => {
       }
     }
 
-    if (fields.length === 0) {
-      return res.status(400).json({ error: 'No fields to update' });
+    if (fields.length > 0) {
+      params.push(quizId);
+      await pool.query(
+        `UPDATE quizzes SET ${fields.join(', ')} WHERE id = ?`,
+        params
+      );
     }
 
-    params.push(req.params.id);
-    const [result] = await pool.query(
-      `UPDATE quizzes SET ${fields.join(', ')} WHERE id = ?`,
-      params
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Quiz not found' });
+    if (req.body.question_ids !== undefined && Array.isArray(req.body.question_ids)) {
+      await pool.query('UPDATE questions SET quiz_id = NULL WHERE quiz_id = ?', [quizId]);
+      if (req.body.question_ids.length > 0) {
+        const placeholders = req.body.question_ids.map(() => '?').join(',');
+        await pool.query(
+          `UPDATE questions SET quiz_id = ? WHERE id IN (${placeholders})`,
+          [quizId, ...req.body.question_ids]
+        );
+      }
     }
 
-    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [req.params.id]);
-    res.json({ quiz: quiz[0] });
+    const [quiz] = await pool.query('SELECT * FROM quizzes WHERE id = ?', [quizId]);
+    const [questions] = await pool.query(`
+      SELECT q.*, 
+             (SELECT COUNT(*) FROM question_options WHERE question_id = q.id) as option_count
+      FROM questions q
+      WHERE q.quiz_id = ?
+      ORDER BY q.id
+    `, [quizId]);
+
+    res.json({ quiz: quiz[0], questions });
   } catch (err) {
     console.error('Update quiz error:', err);
     res.status(500).json({ error: 'Internal server error' });

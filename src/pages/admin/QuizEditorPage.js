@@ -25,6 +25,8 @@ export const QuizEditorPage = () => {
         totalMarks: 100,
         passingScore: 60,
         questions: [],
+        startTime: '',
+        endTime: '',
         settings: {
             shuffleQuestions: true,
             shuffleOptions: true,
@@ -51,13 +53,11 @@ export const QuizEditorPage = () => {
             }
             if (isEditing && quizId) {
                 await updateQuiz(quizId, quiz);
-            }
-            else {
+            } else {
                 await createQuiz(quiz);
             }
             navigate('/admin/quizzes');
-        }
-        catch (err) {
+        } catch (err) {
             setError(err.message || 'Failed to save quiz');
         }
     };
@@ -65,8 +65,12 @@ export const QuizEditorPage = () => {
         if (!isEditing || !quizId)
             return;
         try {
-            await publishQuiz(quizId);
-            navigate('/admin/quizzes');
+            const result = await publishQuiz(quizId, quiz.startTime, quiz.endTime);
+            if (result.success) {
+                navigate('/admin/quizzes');
+            } else {
+                setError(result.error || 'Failed to publish quiz');
+            }
         }
         catch (err) {
             setError(err.message || 'Failed to publish quiz');

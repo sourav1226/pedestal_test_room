@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useUsers, useUpdateUser, useDeleteUser } from '@hooks/index';
+import { useUsers, useUpdateUser, useDeleteUser, useCreateUser } from '@hooks/index';
 import { Card, Button, Modal, Alert, EmptyState, Pagination, Table, Input, Select, Badge } from '@components/common';
 
 export const UserManagementPage = () => {
@@ -9,7 +9,9 @@ export const UserManagementPage = () => {
   const { data: users, total, loading, refetch } = useUsers({ page, limit: 10, role: roleFilter || undefined, status: statusFilter || undefined });
   const { update: updateUser, loading: updateLoading } = useUpdateUser();
   const { delete: deleteUser } = useDeleteUser();
+  const { create: createUser, loading: createLoading } = useCreateUser();
   const [editingUser, setEditingUser] = useState(null);
+  const [showAddModal, setShowAddModal] = useState(false);
   const [error, setError] = useState(null);
 
   const handleUpdate = async (userData) => {
@@ -33,6 +35,17 @@ export const UserManagementPage = () => {
       } catch (err) {
         setError(err.message || 'Failed to delete user');
       }
+    }
+  };
+
+  const handleCreate = async (userData) => {
+    try {
+      setError(null);
+      await createUser(userData);
+      setShowAddModal(false);
+      refetch();
+    } catch (err) {
+      setError(err.message || 'Failed to create user');
     }
   };
 
@@ -78,6 +91,7 @@ export const UserManagementPage = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-2">Manage system users and their roles</p>
         </div>
+        <Button onClick={() => setShowAddModal(true)}>Add User</Button>
       </div>
 
       <div className="flex gap-4">
@@ -128,9 +142,87 @@ export const UserManagementPage = () => {
           <UserEditForm user={editingUser} onSave={handleUpdate} onCancel={() => setEditingUser(null)} loading={updateLoading} />
         )}
       </Modal>
+
+      <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add User">
+        <UserCreateForm onSave={handleCreate} onCancel={() => setShowAddModal(false)} loading={createLoading} />
+      </Modal>
     </div>
   );
 };
+
+function UserCreateForm({ onSave, onCancel, loading }) {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    password: '',
+    phone: '',
+    roleId: '3',
+    status: 'active',
+  });
+
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <Input
+        label="Full Name"
+        value={formData.fullName}
+        onChange={(e) => handleChange('fullName', e.target.value)}
+        required
+      />
+      <Input
+        label="Email"
+        type="email"
+        value={formData.email}
+        onChange={(e) => handleChange('email', e.target.value)}
+        required
+      />
+      <Input
+        label="Password"
+        type="password"
+        value={formData.password}
+        onChange={(e) => handleChange('password', e.target.value)}
+        required
+      />
+      <Input
+        label="Phone"
+        value={formData.phone}
+        onChange={(e) => handleChange('phone', e.target.value)}
+      />
+      <Select
+        label="Role"
+        value={formData.roleId}
+        onChange={(e) => handleChange('roleId', e.target.value)}
+        options={[
+          { value: '1', label: 'Admin' },
+          { value: '2', label: 'Instructor' },
+          { value: '3', label: 'Student' },
+          { value: '4', label: 'Moderator' },
+        ]}
+      />
+      <Select
+        label="Status"
+        value={formData.status}
+        onChange={(e) => handleChange('status', e.target.value)}
+        options={[
+          { value: 'active', label: 'Active' },
+          { value: 'inactive', label: 'Inactive' },
+        ]}
+      />
+      <div className="flex gap-2 justify-end pt-2">
+        <Button variant="secondary" type="button" onClick={onCancel}>Cancel</Button>
+        <Button variant="primary" type="submit" loading={loading}>Create User</Button>
+      </div>
+    </form>
+  );
+}
 
 function UserEditForm({ user, onSave, onCancel, loading }) {
   const [formData, setFormData] = useState({
