@@ -128,7 +128,7 @@ async function generateDoc() {
 
   const children = [
     new Paragraph({
-      text: "Pedestal Test Room - Detailed Project Report",
+      text: "Quiz Portal - Detailed Project Report",
       heading: HeadingLevel.HEADING_1
     }),
     new Paragraph({

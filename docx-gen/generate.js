@@ -37,7 +37,7 @@ const useCase = `flowchart LR
     Student((Student))
     Admin((Admin))
     
-    subgraph System ["Pedestal Test Room"]
+    subgraph System ["Quiz Portal"]
         UC1(Login / Authentication)
         UC2(Take Quiz)
         UC3(View Results)
@@ -133,11 +133,11 @@ async function generateDoc() {
 
   const children = [
     new Paragraph({
-      text: "Pedestal Test Room - Project Report",
+      text: "Quiz Portal - Project Report",
       heading: HeadingLevel.HEADING_1
     }),
     new Paragraph({
-      text: "This document contains the system design and architecture diagrams for the Pedestal Test Room project."
+      text: "This document contains the system design and architecture diagrams for the Quiz Portal project."
     }),
   ];
 

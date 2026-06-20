@@ -34,7 +34,7 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/leaderboards', leaderboardRoutes);
 
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Quiz App API is running' });
+  res.json({ status: 'OK', message: 'Quiz Portal API is running' });
 });
 
 app.use((err, req, res, next) => {
