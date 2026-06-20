@@ -7,7 +7,10 @@ export const getQuizzes = async (req, res) => {
 
     let query = `
       SELECT q.*, u.full_name as created_by_name, c.course_name,
-             (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
+             (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
+             CASE WHEN q.start_time IS NOT NULL AND q.end_time IS NOT NULL
+                  AND NOW() >= q.start_time AND NOW() <= q.end_time
+             THEN TRUE ELSE FALSE END as is_live
       FROM quizzes q
       JOIN users u ON q.created_by = u.id
       LEFT JOIN courses c ON q.course_id = c.id
@@ -25,6 +28,11 @@ export const getQuizzes = async (req, res) => {
       } else if (statuses.length > 1) {
         query += ` AND q.status IN (${statuses.map(() => '?').join(',')})`;
         params.push(...statuses);
+      }
+
+      const hasPublished = statuses.some(s => s === 'published' || s === 'active');
+      if (hasPublished) {
+        query += ' AND (q.end_time IS NULL OR q.end_time > NOW())';
       }
     }
 
@@ -51,7 +59,10 @@ export const getQuizzes = async (req, res) => {
 export const getQuizById = async (req, res) => {
   try {
     const [quizzes] = await pool.query(`
-      SELECT q.*, u.full_name as created_by_name, c.course_name, b.batch_name
+      SELECT q.*, u.full_name as created_by_name, c.course_name, b.batch_name,
+             CASE WHEN q.start_time IS NOT NULL AND q.end_time IS NOT NULL
+                  AND NOW() >= q.start_time AND NOW() <= q.end_time
+             THEN TRUE ELSE FALSE END as is_live
       FROM quizzes q
       JOIN users u ON q.created_by = u.id
       LEFT JOIN courses c ON q.course_id = c.id

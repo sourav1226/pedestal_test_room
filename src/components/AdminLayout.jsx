@@ -7,6 +7,8 @@ const navItems = [
   { path: '/admin/quizzes', label: 'Quizzes', icon: '📝' },
   { path: '/admin/questions', label: 'Questions', icon: '❓' },
   { path: '/admin/question-bank', label: 'Question Bank', icon: '📚' },
+  { path: '/admin/results', label: 'Results', icon: '📋' },
+  { path: '/admin/leaderboard', label: 'Leaderboard', icon: '🏆' },
   { path: '/admin/batches', label: 'Batches', icon: '👥' },
   { path: '/admin/users', label: 'Users', icon: '👤' },
 ]

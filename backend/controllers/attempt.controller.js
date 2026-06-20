@@ -24,25 +24,26 @@ export const startAttempt = async (req, res) => {
     const quiz = quizzes[0];
 
     if (quiz.start_time && new Date(quiz.start_time) > new Date()) {
-      return res.status(400).json({ error: 'Quiz has not started yet' });
+      return res.status(400).json({
+        error: `Quiz "${quiz.title}" starts at ${new Date(quiz.start_time).toLocaleString()} and is not available yet`
+      });
     }
 
     if (quiz.end_time && new Date(quiz.end_time) < new Date()) {
-      return res.status(400).json({ error: 'Quiz has already ended' });
+      return res.status(400).json({
+        error: `Quiz "${quiz.title}" ended at ${new Date(quiz.end_time).toLocaleString()} and is no longer available`
+      });
     }
 
     const [existing] = await connection.query(
-      'SELECT id FROM quiz_attempts WHERE quiz_id = ? AND student_id = ? AND status = "in_progress"',
+      'SELECT * FROM quiz_attempts WHERE quiz_id = ? AND student_id = ? AND status = "in_progress"',
       [quiz_id, student_id]
     );
 
     if (existing.length > 0) {
-      // Resume existing attempt
-      const [attempt] = await connection.query(
-        'SELECT * FROM quiz_attempts WHERE id = ?', [existing[0].id]
-      );
+      // Resume existing in-progress attempt
       await connection.commit();
-      return res.json({ attempt: attempt[0], resumed: true });
+      return res.json({ attempt: existing[0], resumed: true });
     }
 
     const [result] = await connection.query(

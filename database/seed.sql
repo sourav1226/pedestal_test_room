@@ -117,14 +117,14 @@ INSERT INTO batch_students (batch_id, student_id) VALUES
 -- Quizzes
 -- ============================================================
 INSERT INTO quizzes (title, description, course_id, batch_id, created_by, duration_minutes, total_marks, passing_marks, negative_marking, status, start_time, end_time) VALUES
-('Algebra Basics Quiz',     'Test your algebra fundamentals',     1, 1, 2, 30, 50,  20,  FALSE, 'published', '2026-03-01 09:00:00', '2026-03-01 10:00:00'),
-('Geometry Fundamentals',   'Test your geometry knowledge',       1, 1, 2, 45, 100, 40,  TRUE,  'published', '2026-03-10 09:00:00', '2026-03-10 10:00:00'),
+('Algebra Basics Quiz',     'Test your algebra fundamentals',     1, 1, 2, 30, 50,  20,  FALSE, 'published', '2026-12-01 09:00:00', '2026-12-01 10:00:00'),
+('Geometry Fundamentals',   'Test your geometry knowledge',       1, 1, 2, 45, 100, 40,  TRUE,  'published', '2026-12-02 09:00:00', '2026-12-02 10:00:00'),
 ('Mechanics Midterm',       'Midterm assessment for mechanics',   2, 2, 2, 60, 100, 35,  FALSE, 'draft',     NULL,                   NULL),
-('CS Programming Basics',   'Fundamentals of programming',        3, 3, 2, 30, 50,  25,  FALSE, 'active',    '2026-03-15 10:00:00', '2026-03-15 11:00:00'),
-('Data Structures & Algorithms', 'Test your knowledge of DSA concepts', 3, 3, 2, 45, 80, 32, FALSE, 'published', '2026-04-01 09:00:00', '2026-04-01 10:00:00'),
-('Computer Networks',       'Networking fundamentals and protocols', 3, 3, 2, 30, 60, 24, TRUE,  'published', '2026-04-10 10:00:00', '2026-04-10 11:00:00'),
-('Database Management Systems', 'SQL and database concepts',      3, 3, 2, 40, 70, 28, FALSE, 'published', '2026-04-15 09:00:00', '2026-04-15 10:00:00'),
-('Operating Systems',       'OS concepts including memory management, scheduling', 3, 3, 2, 35, 60, 24, FALSE, 'active', '2026-04-20 10:00:00', '2026-04-20 11:00:00');
+('CS Programming Basics',   'Fundamentals of programming',        3, 3, 2, 30, 50,  25,  FALSE, 'active',    '2026-12-03 10:00:00', '2026-12-03 11:00:00'),
+('Data Structures & Algorithms', 'Test your knowledge of DSA concepts', 3, 3, 2, 45, 80, 32, FALSE, 'published', '2026-12-06 09:00:00', '2026-12-06 10:00:00'),
+('Computer Networks',       'Networking fundamentals and protocols', 3, 3, 2, 30, 60, 24, TRUE,  'published', '2026-12-07 10:00:00', '2026-12-07 11:00:00'),
+('Database Management Systems', 'SQL and database concepts',      3, 3, 2, 40, 70, 28, FALSE, 'published', '2026-12-08 09:00:00', '2026-12-08 10:00:00'),
+('Operating Systems',       'OS concepts including memory management, scheduling', 3, 3, 2, 35, 60, 24, FALSE, 'active', '2026-12-09 10:00:00', '2026-12-09 11:00:00');
 
 -- ============================================================
 -- Questions (Quiz 1 – Algebra Basics)
@@ -186,8 +186,8 @@ INSERT INTO question_options (question_id, option_text, is_correct) VALUES
 -- Quiz Attempts
 -- ============================================================
 INSERT INTO quiz_attempts (quiz_id, student_id, started_at, submitted_at, total_score, percentage, rank_position, status) VALUES
-(1, 3, '2026-03-01 09:05:00', '2026-03-01 09:25:00', 35.00, 70.00, 1, 'completed'),
-(1, 4, '2026-03-01 09:10:00', '2026-03-01 09:35:00', 25.00, 50.00, 2, 'completed');
+(1, 3, '2026-07-01 09:05:00', '2026-07-01 09:25:00', 35.00, 70.00, 1, 'completed'),
+(1, 4, '2026-07-01 09:10:00', '2026-07-01 09:35:00', 25.00, 50.00, 2, 'completed');
 
 -- ============================================================
 -- Attempt Answers
@@ -486,14 +486,14 @@ INSERT INTO question_options (question_id, option_text, is_correct) VALUES
 -- Quiz Attempts (for new CS quizzes)
 -- ============================================================
 INSERT INTO quiz_attempts (quiz_id, student_id, started_at, submitted_at, total_score, percentage, rank_position, status) VALUES
-(5, 3, '2026-04-01 09:05:00', '2026-04-01 09:35:00', 60.00, 75.00, 1, 'completed'),
-(5, 4, '2026-04-01 09:10:00', '2026-04-01 09:40:00', 45.00, 56.25, 2, 'completed'),
-(6, 3, '2026-04-10 10:05:00', '2026-04-10 10:25:00', 50.00, 83.33, 1, 'completed'),
-(6, 4, '2026-04-10 10:10:00', '2026-04-10 10:30:00', 35.00, 58.33, 2, 'completed'),
-(7, 3, '2026-04-15 09:05:00', '2026-04-15 09:35:00', 55.00, 78.57, 1, 'completed'),
-(7, 4, '2026-04-15 09:10:00', '2026-04-15 09:40:00', 40.00, 57.14, 2, 'completed'),
-(8, 3, '2026-04-20 10:05:00', '2026-04-20 10:30:00', 45.00, 75.00, 1, 'completed'),
-(8, 4, '2026-04-20 10:10:00', '2026-04-20 10:35:00', 30.00, 50.00, 2, 'completed');
+(5, 3, '2026-07-06 09:05:00', '2026-07-06 09:35:00', 60.00, 75.00, 1, 'completed'),
+(5, 4, '2026-07-06 09:10:00', '2026-07-06 09:40:00', 45.00, 56.25, 2, 'completed'),
+(6, 3, '2026-07-07 10:05:00', '2026-07-07 10:25:00', 50.00, 83.33, 1, 'completed'),
+(6, 4, '2026-07-07 10:10:00', '2026-07-07 10:30:00', 35.00, 58.33, 2, 'completed'),
+(7, 3, '2026-07-08 09:05:00', '2026-07-08 09:35:00', 55.00, 78.57, 1, 'completed'),
+(7, 4, '2026-07-08 09:10:00', '2026-07-08 09:40:00', 40.00, 57.14, 2, 'completed'),
+(8, 3, '2026-07-09 10:05:00', '2026-07-09 10:30:00', 45.00, 75.00, 1, 'completed'),
+(8, 4, '2026-07-09 10:10:00', '2026-07-09 10:35:00', 30.00, 50.00, 2, 'completed');
 
 -- ============================================================
 -- Results (for new CS quizzes)

@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { Form, Button, Card, Row, Col, Alert } from 'react-bootstrap';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [validated, setValidated] = useState(false);
-  const { login, loading, error } = useAuthStore();
+  const { user, accessToken, login, loading, error } = useAuthStore();
   const navigate = useNavigate();
+
+  if (accessToken && user) {
+    if (user.role_id === 1) {
+      return <Navigate to="/admin" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
